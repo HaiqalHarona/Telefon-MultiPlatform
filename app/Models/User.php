@@ -24,10 +24,11 @@ class User extends MongoUser
     protected $fillable = [
         'name',
         'email',
-        'password',
         'avatar',
         'status',          // online | offline | away
         'last_seen_at',
+        'google_id',
+        'github_id',
     ];
 
     /**
@@ -36,7 +37,6 @@ class User extends MongoUser
      * @var list<string>
      */
     protected $hidden = [
-        'password',
         'remember_token',
     ];
 
@@ -48,9 +48,7 @@ class User extends MongoUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'last_seen_at'      => 'datetime',
-            'password'          => 'hashed',
+            'last_seen_at' => 'datetime',
         ];
     }
 
