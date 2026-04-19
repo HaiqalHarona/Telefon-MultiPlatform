@@ -2,10 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
-use App\Http\Controllers\socialController;
+use App\Http\Controllers\SocialController;
 
-Volt::route('/', 'auth')->middleware('guest')->name('auth');
+Volt::route('/', 'auth')->name('auth');
 
 //Socialite Routes
-Route::get('/auth/{provider}/redirect', [socialController::class, 'RedirectToProvider'])->where('provider', 'google|github')->name('social.redirect');
-Route::get('/auth/{provider}/callback', [socialController::class, 'ProviderCallback'])->where('provider', 'google|github')->name('social.callback');
+Route::get('/auth/{provider}/redirect', [SocialController::class, 'redirectProvider'])->where('provider', 'google|github')->name('social.redirect');
+Route::get('/auth/{provider}/callback', [SocialController::class, 'callbackRequest'])->where('provider', 'google|github')->name('social.callback');
+
+Route::middleware('auth')->group(function () {
+    Volt::route('/chat', 'messenger')->name('messenger');
+});

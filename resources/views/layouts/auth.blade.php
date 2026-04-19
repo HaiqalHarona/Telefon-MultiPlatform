@@ -17,5 +17,18 @@
 
     <!-- Livewire Scripts -->
     @livewireScripts
+
+    <!-- Global Notifications -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            @if(session('success'))
+                window.notyf.success("{{ session('success') }}");
+            @endif
+
+            @if(session('error'))
+                window.notyf.error("{{ session('error') }}");
+            @endif
+        });
+    </script>
 </body>
 </html>

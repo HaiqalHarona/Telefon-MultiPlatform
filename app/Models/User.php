@@ -6,12 +6,13 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use MongoDB\Laravel\Auth\User as MongoUser;
 
 class User extends MongoUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $connection = 'mongodb';
     protected $collection = 'users';
@@ -29,6 +30,7 @@ class User extends MongoUser
         'last_seen_at',
         'google_id',
         'github_id',
+        'user_tag',
     ];
 
     /**

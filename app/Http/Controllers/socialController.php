@@ -7,9 +7,10 @@ use Illuminate\Routing\Controller;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 
-class socialController extends Controller
+class SocialController extends Controller
 {
     public function redirectProvider($provider)
     {
@@ -30,7 +31,7 @@ class socialController extends Controller
             if ($provider == 'google') {
                 $email = $user->getEmail();
                 $providerId = $user->getId();
-                
+
                 if (empty($email)) {
                     return redirect()->route('auth')->with('error', "We could not get your email address from $provider. Please make your email public on Google or register manually.");
                 }
@@ -43,6 +44,7 @@ class socialController extends Controller
                     [
                         'name' => $user->getName(),
                         'avatar' => $user->getAvatar(),
+                        'user_tag' => $this->generateUniqueTag('SanCo'),
                     ]
                 );
             } elseif ($provider == 'github') {
@@ -56,19 +58,36 @@ class socialController extends Controller
                         'name' => $user->getName() ?? $user->getNickname(),
                         'email' => $user->getEmail(),
                         'avatar' => $user->getAvatar(),
+                        'user_tag' => $this->generateUniqueTag('SanCo'),
                     ]
                 );
             }
 
             if ($appUser) {
                 Auth::login($appUser);
-                return redirect()->intended('/');
+                return redirect()->route('messenger')->with('success', 'Welcome ' . $appUser->name);
             }
 
             return redirect()->route('auth')->with('error', 'Authentication provider not recognized.');
-
         } catch (\Exception $e) {
             return redirect()->route('auth')->with('error', 'An error occurred during authentication: ' . $e->getMessage());
         }
+    }
+
+    protected function generateUniqueTag($prefix = 'user')
+    {
+        $unique = false;
+        $tag = '';
+
+        while (!$unique) {
+            // Generate a random unique tag like 'goog_a1b2c3d4e5' or 'ghub_a1b2c3d4e5'
+            $tag = $prefix . '_' . Str::lower(Str::random(10));
+
+            if (!User::where('user_tag', $tag)->exists()) {
+                $unique = true;
+            }
+        }
+
+        return $tag;
     }
 }
