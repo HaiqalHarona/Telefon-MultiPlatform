@@ -12,4 +12,5 @@ Route::get('/auth/{provider}/callback', [SocialController::class, 'callbackReque
 
 Route::middleware('auth')->group(function () {
     Volt::route('/chat', 'messenger')->name('messenger');
+    Route::post('/logout', [SocialController::class, 'logout'])->name('logout');
 });

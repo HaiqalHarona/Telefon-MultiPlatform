@@ -90,4 +90,13 @@ class SocialController extends Controller
 
         return $tag;
     }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('auth')->with('success', 'Logged out successfully');
+    }
 }

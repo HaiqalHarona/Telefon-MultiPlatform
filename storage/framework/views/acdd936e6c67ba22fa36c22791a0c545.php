@@ -20,10 +20,13 @@
                     <button @click="activeTab = 'appearance'" :class="activeTab === 'appearance' ? 'text-pink-500 bg-pink-500/10' : 'text-[#71717a]'" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium">Appearance</button>
                 </div>
 
-                <button class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium text-red-500 hover:bg-red-500/10 mt-auto">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    Logout
-                </button>
+                <form method="POST" action="<?php echo e(route('logout')); ?>" class="mt-auto">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium text-red-500 hover:bg-red-500/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        Logout
+                    </button>
+                </form>
             </nav>
         </div>
         

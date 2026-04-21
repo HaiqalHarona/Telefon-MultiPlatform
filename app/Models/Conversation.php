@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use App\Models\User;
+use App\Models\Message;
+use Illuminate\Support\Facades\Auth;
 
 
 class Conversation extends Model
@@ -112,5 +115,77 @@ class Conversation extends Model
     public function scopeForUser($query, string $userId)
     {
         return $query->where('participant_ids', $userId);
+    }
+
+    /**
+     * Helper to get the display name and avatar for the conversation.
+     * In a direct chat, it returns the other user's info.
+     * In a self-chat, it returns "You".
+     */
+    public function getDisplayInfo()
+    {
+        if ($this->type === 'group') {
+            return [
+                'name'   => $this->name ?? 'Group Chat',
+                'avatar' => $this->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'G'),
+            ];
+        }
+
+        // Direct Chat - Find the ID that isn't the current user
+        $otherId = collect($this->participant_ids)
+            ->reject(fn($id) => (string) $id === (string) Auth::id())  // ← was auth()->id()
+            ->first();
+
+        // Self-chat (Saved Messages)
+        if (!$otherId) {
+            $user = Auth::user();                                        // ← was auth()->user()
+            return [
+                'name'   => 'You (Saved Messages)',
+                'avatar' => $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'You'),
+            ];
+        }
+
+        $otherUser = User::find($otherId);
+
+        if (!$otherUser) {
+            return [
+                'name'   => 'Deleted User',
+                'avatar' => 'https://ui-avatars.com/api/?name=D',
+                'status' => 'offline',
+            ];
+        }
+
+        return [
+            'name'   => $otherUser->name ?? 'Unknown User',
+            'avatar' => $otherUser->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name ?? 'U'),
+            'status' => $otherUser->status ?? 'offline',
+        ];
+    }
+
+    /**
+     * Find or create a direct conversation between two users.
+     * Ensures consistent participant ordering and handles self-chats.
+     */
+    public static function findOrCreateDirect(string $userA, string $userB): self
+    {
+        $participants = [(string) $userA, (string) $userB];
+        sort($participants);
+        $participants = array_unique($participants);
+
+        $convo = static::where('type', 'direct')
+            ->where('participant_ids', 'all', $participants)
+            ->where('participant_ids', 'size', count($participants))
+            ->first();
+
+        if (!$convo) {
+            $convo = static::create([
+                'type'             => 'direct',
+                'participant_ids'  => $participants,
+                'last_activity_at' => now(),
+                'created_by'       => $userA,
+            ]);
+        }
+
+        return $convo;
     }
 }

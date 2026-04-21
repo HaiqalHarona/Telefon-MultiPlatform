@@ -1,4 +1,4 @@
-# Telefon — Full Database Relationship Diagram
+# SanCo - Full Database Relationship Diagram
 
 ## Entity Relationship Diagram
 
@@ -8,11 +8,11 @@ erDiagram
         ObjectId _id PK
         string name
         string email
-        string password
         string avatar
         string status "online | offline | away"
         datetime last_seen_at
-        datetime email_verified_at
+        datetime created_at
+        string user_tag "Unique public tag"
     }
 
     CONVERSATION {
@@ -20,9 +20,9 @@ erDiagram
         string type "direct | group"
         string name "nullable for direct"
         string avatar "nullable"
-        array participant_ids "User ObjectId[]"
+        array participant_ids "Array of User ObjectIds"
         ObjectId last_message_id FK
-        datetime last_activity_at
+        datetime last_activity_at "Used for sorting chat list"
         ObjectId created_by FK
         object metadata
     }
@@ -32,10 +32,10 @@ erDiagram
         ObjectId conversation_id FK
         ObjectId sender_id FK
         string type "text | image | file | audio | video | system"
-        string body
-        array read_by "user_id + read_at pairs"
-        array reactions "user_id + emoji pairs"
-        ObjectId reply_to_id FK "nullable, thread parent"
+        string body "Message content"
+        array read_by "Array of {user_id, read_at}"
+        array reactions "Array of {user_id, emoji}"
+        ObjectId reply_to_id FK "nullable, parent message"
         boolean is_edited
         datetime edited_at
         object metadata
@@ -47,17 +47,17 @@ erDiagram
         string mime_type
         string url
         string thumbnail_url
-        int duration "seconds, audio/video"
+        int duration "seconds"
         int width "px"
         int height "px"
     }
 
     FRIENDSHIP {
         ObjectId _id PK
-        ObjectId user_id FK
-        ObjectId friend_id FK
+        ObjectId user_id FK "Owner of this record"
+        ObjectId friend_id FK "The other user"
         string status "pending | accepted | blocked"
-        ObjectId action_user_id FK
+        ObjectId action_user_id FK "Initiator of the state"
         datetime accepted_at
         datetime blocked_at
         object metadata
@@ -70,161 +70,77 @@ erDiagram
     CONVERSATION ||--o| MESSAGE : "last_message_id"
     MESSAGE ||--o| MESSAGE : "reply_to_id (thread)"
     MESSAGE ||--o{ ATTACHMENT : "embedsMany (subdocument)"
-    USER ||--o{ FRIENDSHIP : "user_id (owner side)"
-    USER ||--o{ FRIENDSHIP : "friend_id (other side)"
+    USER ||--o{ FRIENDSHIP : "user_id"
+    USER ||--o{ FRIENDSHIP : "friend_id"
 ```
 
 ---
 
-## Model Connections Overview
+## Model Relationships & Functions
 
-```mermaid
-graph LR
-    subgraph Social["🤝 Social Layer"]
-        FRIENDSHIP["Friendship"]
-    end
+### 👤 User Model (`app/Models/User.php`)
 
-    subgraph Messaging["💬 Messaging Layer"]
-        CONVERSATION["Conversation"]
-        MESSAGE["Message"]
-        ATTACHMENT["Attachment"]
-    end
+| Method | Description |
+| :--- | :--- |
+| `conversations()` | Gets all conversations where the user's ID is in `participant_ids`. |
+| `messages()` | Gets all messages sent by this user (1:N). |
+| `friendships()` | Returns all friendship records owned by the user. |
+| `friends()` | Returns only **accepted** friendship records. |
+| `sentFriendRequests()` | Returns friendship records initiated by the user that are still `pending`. |
+| `receivedFriendRequests()` | Returns friendship records where the user is the target and status is `pending`. |
+| `blockedUsers()` | Returns friendship records where the user has blocked others. |
+| `isFriendWith($id)` | Checks if a mutual accepted friendship exists with `$id`. |
+| `hasBlocked($id)` | Checks if the current user has blocked the user with `$id`. |
+| `isBlockedBy($id)` | Checks if the user with `$id` has blocked the current user. |
 
-    USER["👤 User"]
+### 💬 Conversation Model (`app/Models/Conversation.php`)
 
-    USER -->|"friends()"| FRIENDSHIP
-    USER -->|"sentFriendRequests()"| FRIENDSHIP
-    USER -->|"receivedFriendRequests()"| FRIENDSHIP
-    USER -->|"blockedUsers()"| FRIENDSHIP
-    FRIENDSHIP -->|"user()"| USER
-    FRIENDSHIP -->|"friend()"| USER
+| Method | Description |
+| :--- | :--- |
+| `messages()` | Relationship to all messages in the conversation. |
+| `lastMessage()` | Relationship to the singular most recent message. |
+| `participants()` | Fetches actual `User` models for every ID in `participant_ids`. |
+| `creator()` | Relationship to the user who created the group/chat. |
+| `addParticipant($id)` | Pushes a new User ID into the `participant_ids` array. |
+| `removeParticipant($id)`| Pulls a User ID from the `participant_ids` array. |
+| `getDisplayInfo()` | Logic that determines the chat name/avatar (Self, Direct, or Group). |
+| **Static** `findOrCreateDirect($a, $b)` | Orchestrates the creation or retrieval of a 1-on-1 chat room. |
 
-    USER -->|"conversations()"| CONVERSATION
-    USER -->|"messages()"| MESSAGE
-    CONVERSATION -->|"messages()"| MESSAGE
-    CONVERSATION -->|"lastMessage()"| MESSAGE
-    CONVERSATION -->|"participants()"| USER
-    CONVERSATION -->|"creator()"| USER
-    MESSAGE -->|"conversation()"| CONVERSATION
-    MESSAGE -->|"sender()"| USER
-    MESSAGE -->|"replyTo()"| MESSAGE
-    MESSAGE -->|"replies()"| MESSAGE
-    MESSAGE -->|"attachments()"| ATTACHMENT
+### ✉️ Message Model (`app/Models/Message.php`)
 
-    style USER fill:#6366f1,color:#fff
-    style FRIENDSHIP fill:#f59e0b,color:#fff
-    style CONVERSATION fill:#10b981,color:#fff
-    style MESSAGE fill:#3b82f6,color:#fff
-    style ATTACHMENT fill:#8b5cf6,color:#fff
-```
+| Method | Description |
+| :--- | :--- |
+| `conversation()` | Parent relationship to the Conversation. |
+| `sender()` | Relationship to the User who sent the message. |
+| `replyTo()` | Relationship to the parent message if this is a reply. |
+| `replies()` | Relationship to all messages replying to this one. |
+| `attachments()` | Accessor for sub-document attachments (images/files). |
+| `markReadBy($userId)` | Adds the user to the `read_by` array with a timestamp. |
+| `isReadBy($userId)` | Checks if a specific user has viewed this message. |
+| `addReaction($id, $emoji)` | Adds/Updates an emoji reaction in the `reactions` array. |
 
----
+### 🤝 Friendship Model (`app/Models/Friendship.php`)
 
-## Function Cheatsheet
-
-### 🤝 Friendship — Static Methods (call on the class)
-
-| Action | Code | What it does |
-|--------|------|-------------|
-| **Send request** | `Friendship::sendRequest($myId, $theirId)` | Creates 1 pending doc |
-| **Accept request** | `Friendship::acceptRequest($myId, $senderId)` | Updates to accepted + creates reciprocal doc |
-| **Reject request** | `Friendship::rejectRequest($myId, $senderId)` | Deletes the pending doc |
-| **Remove friend** | `Friendship::removeFriend($myId, $theirId)` | Deletes both accepted docs |
-| **Block user** | `Friendship::blockUser($myId, $theirId)` | Removes everything, creates 1 blocked doc |
-| **Unblock user** | `Friendship::unblockUser($myId, $theirId)` | Deletes the blocked doc |
-| **Are friends?** | `Friendship::areFriends($a, $b)` | Returns `bool` |
-| **Has blocked?** | `Friendship::hasBlocked($blocker, $blocked)` | Returns `bool` |
-
-### 👤 User — Instance Methods (call on a `$user`)
-
-| Action | Code | Returns |
-|--------|------|---------|
-| **My friends** | `$user->friends` | Collection of `Friendship` (use `->friend` for User) |
-| **Requests I sent** | `$user->sentFriendRequests` | Collection of pending `Friendship` |
-| **Requests I received** | `$user->receivedFriendRequests` | Collection of pending `Friendship` |
-| **Users I blocked** | `$user->blockedUsers` | Collection of blocked `Friendship` |
-| **Am I friends with X?** | `$user->isFriendWith($id)` | `bool` |
-| **Did I block X?** | `$user->hasBlocked($id)` | `bool` |
-| **Did X block me?** | `$user->isBlockedBy($id)` | `bool` |
-| **My conversations** | `$user->conversations()` | Collection of `Conversation` |
-| **My messages** | `$user->messages` | Collection of `Message` |
-
-### 💬 Conversation — Instance Methods
-
-| Action | Code | Returns |
-|--------|------|---------|
-| **All messages** | `$convo->messages` | Collection of `Message` |
-| **Last message** | `$convo->lastMessage` | `Message` |
-| **Participants** | `$convo->participants()` | Collection of `User` |
-| **Creator** | `$convo->creator` | `User` |
-| **Add participant** | `$convo->addParticipant($userId)` | `void` |
-| **Remove participant** | `$convo->removeParticipant($userId)` | `void` |
-| **Has participant?** | `$convo->hasParticipant($userId)` | `bool` |
-| **Only direct chats** | `Conversation::direct()->get()` | Scope |
-| **Only groups** | `Conversation::group()->get()` | Scope |
-| **User's convos** | `Conversation::forUser($id)->get()` | Scope |
-
-### 📨 Message — Instance Methods
-
-| Action | Code | Returns |
-|--------|------|---------|
-| **Its conversation** | `$msg->conversation` | `Conversation` |
-| **Who sent it** | `$msg->sender` | `User` |
-| **Parent message** | `$msg->replyTo` | `Message` or null |
-| **Thread replies** | `$msg->replies` | Collection of `Message` |
-| **Attachments** | `$msg->attachments` | Collection of `Attachment` |
-| **Mark as read** | `$msg->markReadBy($userId)` | `void` |
-| **Is read by X?** | `$msg->isReadBy($userId)` | `bool` |
-| **Add reaction** | `$msg->addReaction($userId, '👍')` | `void` |
-| **Remove reaction** | `$msg->removeReaction($userId)` | `void` |
-
-### 📎 Attachment — Instance Methods
-
-| Action | Code | Returns |
-|--------|------|---------|
-| **Is image?** | `$att->isImage()` | `bool` |
-| **Is video?** | `$att->isVideo()` | `bool` |
-| **Is audio?** | `$att->isAudio()` | `bool` |
-| **Readable size** | `$att->humanFileSize()` | `string` e.g. "2.5 MB" |
+| Method | Description |
+| :--- | :--- |
+| **Static** `sendRequest($a, $b)` | Creates a new `pending` record. |
+| **Static** `acceptRequest($me, $sender)` | Marks original as `accepted` and creates a reciprocal record. |
+| **Static** `removeFriend($a, $b)` | Deletes **both** reciprocal records (Unfriend). |
+| **Static** `blockUser($me, $them)` | Deletes friendships and creates a singular `blocked` record. |
+| **Static** `areFriends($a, $b)` | Verifies if an accepted record exists between two users. |
 
 ---
 
-## Common Usage Patterns
+## Database Architecture Overview
 
-### Send a friend request then start chatting after acceptance
-```php
-// 1. Alice sends friend request
-Friendship::sendRequest($alice->_id, $bob->_id);
+### MongoDB Specifics
+- **Eloquent-Compatible**: We use the `mongodb/laravel-mongodb` package, allowing us to use standard Laravel relationships (`hasMany`, `belongsTo`) while benefiting from MongoDB's flexible schema.
+- **Embedded Arrays**: Instead of complex pivot tables for "Participant Lists" or "Read Receipts", we use arrays (`participant_ids`, `read_by`). This is significantly faster in NoSQL.
+- **Atomic Operations**: We use `$push` and `$pull` for adding/removing items from arrays to ensure data integrity without refreshing the entire document.
 
-// 2. Bob accepts
-Friendship::acceptRequest($bob->_id, $alice->_id);
-
-// 3. Now create a direct conversation
-$convo = Conversation::create([
-    'type'            => 'direct',
-    'participant_ids' => [$alice->_id, $bob->_id],
-    'created_by'      => $alice->_id,
-    'last_activity_at' => now(),
-]);
-
-// 4. Alice sends a message
-$message = Message::create([
-    'conversation_id' => $convo->_id,
-    'sender_id'       => $alice->_id,
-    'type'            => 'text',
-    'body'            => 'Hey Bob! 👋',
-]);
-
-// 5. Update conversation's last message
-$convo->update([
-    'last_message_id'  => $message->_id,
-    'last_activity_at' => now(),
-]);
-```
-
-### Check friendship before allowing message
-```php
-if ($user->isFriendWith($recipientId) && !$user->isBlockedBy($recipientId)) {
-    // allow messaging
-}
-```
+### The Symmetric Friendship System
+To ensure both Alice and Bob can see each other in their "Friends" list with high performance, we use a **reciprocal document** pattern:
+1. Alice accepts Bob's request.
+2. Doc 1: `user_id: Alice, friend_id: Bob, status: accepted`
+3. Doc 2: `user_id: Bob, friend_id: Alice, status: accepted`
+This allows us to query `Friendship::where('user_id', auth()->id())->where('status', 'accepted')` and get a simple list of friends instantly.
