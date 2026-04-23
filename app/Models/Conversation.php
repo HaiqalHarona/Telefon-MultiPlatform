@@ -133,12 +133,12 @@ class Conversation extends Model
 
         // Direct Chat - Find the ID that isn't the current user
         $otherId = collect($this->participant_ids)
-            ->reject(fn($id) => (string) $id === (string) Auth::id())  // ← was auth()->id()
+            ->reject(fn($id) => (string) $id === (string) Auth::id())
             ->first();
 
         // Self-chat (Saved Messages)
         if (!$otherId) {
-            $user = Auth::user();                                        // ← was auth()->user()
+            $user = Auth::user();                                       
             return [
                 'name'   => 'You (Saved Messages)',
                 'avatar' => $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'You'),
@@ -187,5 +187,21 @@ class Conversation extends Model
         }
 
         return $convo;
+    }
+
+    /**
+     * Returns a list of conversations for the user, 
+     * including the 'Display Info' (Name/Avatar) pre-calculated.
+     */
+    public static function getInboxFor(User $user)
+    {
+        return static::forUser($user->_id)
+            ->with(['lastMessage'])
+            ->latest('last_activity_at')
+            ->get()
+            ->map(function (Conversation $convo) {
+                $convo->display_data = $convo->getDisplayInfo();
+                return $convo;
+            });
     }
 }

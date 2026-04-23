@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Telefon' }}</title>
+    <title>{{ $title ?? 'SanCo' }}</title>
 
     <!-- Load Tailwind via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -32,6 +32,8 @@ class Message extends Model
         'metadata'    => 'array',
     ];
 
+    protected $with = ['sender'];
+
     // ── Relationships ──────────────────────────────────────────
 
     /**
@@ -123,5 +125,16 @@ class Message extends Model
         return collect($this->read_by)
             ->pluck('user_id')
             ->contains($userId);
+    }
+
+    /**
+     * Load messages in the conversation
+     */
+    public static function getMessages(string $conversationId, int $loadLimit = 20)
+    {
+        return static::where('conversation_id', $conversationId)
+        ->with('attachments')
+        ->latest()
+        ->paginate($loadLimit);
     }
 }

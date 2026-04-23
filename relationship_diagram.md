@@ -78,7 +78,7 @@ erDiagram
 
 ## Model Relationships & Functions
 
-### 👤 User Model (`app/Models/User.php`)
+### User Model (`app/Models/User.php`)
 
 | Method | Description |
 | :--- | :--- |
@@ -93,7 +93,7 @@ erDiagram
 | `hasBlocked($id)` | Checks if the current user has blocked the user with `$id`. |
 | `isBlockedBy($id)` | Checks if the user with `$id` has blocked the current user. |
 
-### 💬 Conversation Model (`app/Models/Conversation.php`)
+### Conversation Model (`app/Models/Conversation.php`)
 
 | Method | Description |
 | :--- | :--- |
@@ -105,8 +105,9 @@ erDiagram
 | `removeParticipant($id)`| Pulls a User ID from the `participant_ids` array. |
 | `getDisplayInfo()` | Logic that determines the chat name/avatar (Self, Direct, or Group). |
 | **Static** `findOrCreateDirect($a, $b)` | Orchestrates the creation or retrieval of a 1-on-1 chat room. |
+| **Static** `getInboxFor($user)` | Returns a list of conversations for the user, including the 'Display Info' (Name/Avatar) pre-calculated. |
 
-### ✉️ Message Model (`app/Models/Message.php`)
+### Message Model (`app/Models/Message.php`)
 
 | Method | Description |
 | :--- | :--- |
@@ -118,8 +119,9 @@ erDiagram
 | `markReadBy($userId)` | Adds the user to the `read_by` array with a timestamp. |
 | `isReadBy($userId)` | Checks if a specific user has viewed this message. |
 | `addReaction($id, $emoji)` | Adds/Updates an emoji reaction in the `reactions` array. |
+| `getMessages($conversationId, $loadLimit=20)` | Loads `messages` in the conversation. With a message load limit of 20 with paginate built-in function. |
 
-### 🤝 Friendship Model (`app/Models/Friendship.php`)
+### Friendship Model (`app/Models/Friendship.php`)
 
 | Method | Description |
 | :--- | :--- |
