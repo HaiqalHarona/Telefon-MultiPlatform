@@ -35,7 +35,8 @@
         .light .text-\[\#a1a1aa\] { color: #7f5539 !important; }
         .light .text-\[\#71717a\] { color: #9c6644 !important; }
         .light .hover\:bg-\[\#202024\]:hover { background-color: rgba(127, 85, 57, 0.1) !important; }
-        .light .bg-black { background-color: #432818 !important; }
+        .light .bg-black { background-color: #ffffff !important; }
+        .light .bg-black.text-white { color: #432818 !important; }
         .light .bg-\[\#18181b\] { background-color: #f7f1ed !important; }
         .light input::placeholder { color: #b08968 !important; }
         .light .bg-white\/10 { background-color: rgba(127, 85, 57, 0.1) !important; }

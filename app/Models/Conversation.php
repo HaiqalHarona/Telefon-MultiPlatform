@@ -26,9 +26,7 @@ class Conversation extends Model
     ];
 
     protected $casts = [
-        'participant_ids'  => 'array',
         'last_activity_at' => 'datetime',
-        'metadata'         => 'array',
     ];
 
     // ── Relationships ──────────────────────────────────────────
@@ -74,7 +72,7 @@ class Conversation extends Model
      */
     public function addParticipant(string $userId): void
     {
-        if (! in_array($userId, $this->participant_ids ?? [])) {
+        if (!in_array($userId, $this->participant_ids ?? [])) {
             $this->push('participant_ids', $userId);
         }
     }
@@ -122,11 +120,11 @@ class Conversation extends Model
      * In a direct chat, it returns the other user's info.
      * In a self-chat, it returns "You".
      */
-    public function getDisplayInfo()
+    public function getDisplayInfo($preloadedUsers = null)
     {
         if ($this->type === 'group') {
             return [
-                'name'   => $this->name ?? 'Group Chat',
+                'name' => $this->name ?? 'Group Chat',
                 'avatar' => $this->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'G'),
             ];
         }
@@ -138,25 +136,26 @@ class Conversation extends Model
 
         // Self-chat (Saved Messages)
         if (!$otherId) {
-            $user = Auth::user();                                       
+            $user = Auth::user();
             return [
-                'name'   => 'You (Saved Messages)',
+                'name' => 'You (Saved Messages)',
                 'avatar' => $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'You'),
             ];
         }
 
-        $otherUser = User::find($otherId);
+        // OPTIMIZATION: Use preloaded users if passed in, otherwise fallback to a single DB query
+        $otherUser = $preloadedUsers ? $preloadedUsers->get($otherId) : User::find($otherId);
 
         if (!$otherUser) {
             return [
-                'name'   => 'Deleted User',
+                'name' => 'Deleted User',
                 'avatar' => 'https://ui-avatars.com/api/?name=D',
                 'status' => 'offline',
             ];
         }
 
         return [
-            'name'   => $otherUser->name ?? 'Unknown User',
+            'name' => $otherUser->name ?? 'Unknown User',
             'avatar' => $otherUser->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name ?? 'U'),
             'status' => $otherUser->status ?? 'offline',
         ];
@@ -170,19 +169,24 @@ class Conversation extends Model
     {
         $participants = [(string) $userA, (string) $userB];
         sort($participants);
-        $participants = array_unique($participants);
 
+        // If Same user add only once get the unique doc _id
+        $participants = array_values(array_unique($participants));
+        $participantCount = count($participants);
+
+        // Optimised searching looking for documents with the exact same participant count
         $convo = static::where('type', 'direct')
+            ->where('participant_ids', 'size', $participantCount)
             ->where('participant_ids', 'all', $participants)
-            ->where('participant_ids', 'size', count($participants))
             ->first();
 
+        // Create if not found
         if (!$convo) {
             $convo = static::create([
-                'type'             => 'direct',
-                'participant_ids'  => $participants,
+                'type' => 'direct',
+                'participant_ids' => $participants,
                 'last_activity_at' => now(),
-                'created_by'       => $userA,
+                'created_by' => (string) $userA,
             ]);
         }
 
@@ -195,13 +199,25 @@ class Conversation extends Model
      */
     public static function getInboxFor(User $user)
     {
-        return static::forUser($user->_id)
+        // Get conversation from the user
+        $conversations = static::forUser($user->_id)
             ->with(['lastMessage'])
             ->latest('last_activity_at')
-            ->get()
-            ->map(function (Conversation $convo) {
-                $convo->display_data = $convo->getDisplayInfo();
-                return $convo;
-            });
+            ->get();
+
+        // Get all unique ids
+        $allParticipantIds = $conversations->pluck('participant_ids')
+            ->flatten()
+            ->unique()
+            ->reject(fn($id) => (string) $id === (string) $user->_id); // User own conversation
+
+        // Get users from the conversation keyed by id in one query
+        $users = User::whereIn('_id', $allParticipantIds)->get()->keyBy('_id');
+
+        // Map the data and pre-load the users in the component
+        return $conversations->map(function (Conversation $convo) use ($users) {
+            $convo->display_data = $convo->getDisplayInfo($users);
+            return $convo;
+        });
     }
 }
