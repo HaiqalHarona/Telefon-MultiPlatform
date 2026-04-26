@@ -5,6 +5,7 @@ use App\Models\Conversation;
 use App\Models\Friendship;
 use App\Models\User;
 use App\Models\Message;
+use Livewire\Attributes\Computed;
 
 new class extends Component {
     /**
@@ -19,6 +20,55 @@ new class extends Component {
         return 'layouts.app';
     }
 
+    /**
+     * @file messenger/pending-requests-overlay.blade.php functions 
+     */
+
+    #[Computed]
+    public function incomingRequest()
+    {
+        return Friendship::getPendingRequests(auth()->id());
+    }
+
+    #[Computed]
+    public function sentRequest()
+    {
+        return Friendship::getSentRequests(auth()->id());
+    }
+
+    public function acceptRequest(string $senderId)
+    {
+        try {
+            Friendship::acceptRequest(auth()->id(), $senderId);
+            session()->flash('success', 'Friend request accepted');
+            dispatch('request-accepted');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    public function rejectRequest(string $senderId)
+    {
+        try {
+            Friendship::rejectRequest(auth()->id(), $senderId);
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * 
+     */
+
+    /**
+     * @file messenger/settings-overlay.blade.php functions
+     */
+
+
+    /**
+     * 
+     */
+
     public function selectConversation($id, $userId = null)
     {
         if (!$id && $userId) {
@@ -31,6 +81,7 @@ new class extends Component {
         $this->dispatch('scroll-bottom');
     }
 
+    #[Computed]
     public function selectedConversation()
     {
         if (!$this->selectedConversationId)
@@ -45,6 +96,7 @@ new class extends Component {
         return $convo;
     }
 
+    #[Computed]
     public function preloadChatList()
     {
         return Conversation::getInboxFor(auth()->user());
@@ -53,23 +105,28 @@ new class extends Component {
     /**
      * Get all accepted friends for the contact sidebar
      */
-    public function getContactsProperty()
+    #[Computed]
+    public function contacts()
     {
-        $friendships = Friendship::where(function ($query) {
-            $query->where('sender_id', auth()->id())
-                ->orWhere('receiver_id', auth()->id());
-        })->get();
+        $auth_id = auth()->id();
 
-        // Collect all unique IDs of the other contacts
-        $friendsIds = $friendships->map(function ($f){
-            return $f->sender_id === auth()->id() ? $f->reciever_id : $f->sender_id;
-        });
+        // Get Contacts either or in user_id or friend_id column
+        $friendships = Friendship::where('status', 'accepted')
+            ->where(function ($query) use ($auth_id) {
+                $query->where('user_id', $auth_id)
+                    ->orWhere('friend_id', $auth_id);
+            })->get();
+
+        // Map friendships and get id of the other user in the conversation (friend_id)
+        $friendsIds = $friendships->map(function ($f) use ($auth_id) {
+            return (string) $f->user_id === (string) $auth_id ? (string) $f->friend_id : (string) $f->user_id;
+        })->unique();
 
         return User::whereIn('_id', $friendsIds)->get();
     }
     /**
      * @var string $searchUserTag
-     * @var User $searchResult
+     * var User $searchResult
      */
     public $searchUserTag = '';
     public $searchResult = null;
@@ -122,12 +179,12 @@ new class extends Component {
         this.theme = this.theme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', this.theme);
     }
-}"
-    x-on:friend-request-sent.window="showAddFriend = false">
+}" x-on:friend-request-sent.window="showAddFriend = false">
 
     <!-- NAVIGATION RAIL -->
-    <div class="w-[68px] flex-shrink-0 flex flex-col items-center py-6 bg-[#1e1e21] border-r border-[#2a2a2d] z-30 flex">
-        
+    <div
+        class="w-[68px] flex-shrink-0 flex flex-col items-center py-6 bg-[#1e1e21] border-r border-[#2a2a2d] z-30 flex">
+
         <div class="space-y-6 flex-1 flex flex-col items-center">
             <div class="p-3 text-pink-500 mb-4">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -146,13 +203,27 @@ new class extends Component {
                 <span
                     class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Chats</span>
             </button>
-            <button @click="showRequests = true"
-                :class="showRequests ? 'text-white' : 'text-[#71717a]'"
+            <button @click="showRequests = true" :class="showRequests ? 'text-white' : 'text-[#71717a]'"
                 class="p-3 rounded-xl transition relative group">
+
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
                 </svg>
-                <span class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Requests</span>
+                @if($this->incomingRequest->count() > 0)
+                    <span
+                        class="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-medium text-white">
+                        {{ $this->incomingRequest->count() }}</span>
+                @elseif($this->incomingRequest->count() > 99)
+                    <span
+                        class="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-medium text-white">99+</span>
+                @endif
+
+                <span
+                    class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                    Requests
+                </span>
             </button>
         </div>
 
@@ -163,8 +234,7 @@ new class extends Component {
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z">
                     </path>
                 </svg>
-                <svg x-show="theme === 'light'" class="w-6 h-6" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
+                <svg x-show="theme === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
                     </path>
@@ -188,7 +258,8 @@ new class extends Component {
 
 
     <!-- CONTACT SIDEBAR -->
-     <div class="w-[320px] md:w-[380px] lg:w-[420px] flex-shrink-0 flex flex-col border-r border-[#2a2a2d] bg-[#18181b] z-20">
+    <div
+        class="w-[320px] md:w-[380px] lg:w-[420px] flex-shrink-0 flex flex-col border-r border-[#2a2a2d] bg-[#18181b] z-20">
         <!-- Sidebar Header -->
         <div class="flex items-center justify-between px-6 py-5 bg-[#1e1e21]">
             <h1 class="text-xl font-bold text-white">Messages</h1>
@@ -219,23 +290,26 @@ new class extends Component {
             </div>
         </div>
 
-<!-- USER CONTACT -->
+        <!-- USER CONTACT -->
         @php $authUser = auth()->user(); @endphp
         <div class="px-4 pt-4 pb-2">
             <div wire:click="selectConversation(null, '{{ $authUser->_id }}')"
-                 class="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 cursor-pointer hover:from-pink-500/15 hover:to-purple-500/15 transition-all duration-200">
+                class="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 cursor-pointer hover:from-pink-500/15 hover:to-purple-500/15 transition-all duration-200">
                 <!-- Avatar -->
                 <div class="relative flex-shrink-0">
                     <img src="{{ $authUser->avatar ?? 'https://ui-avatars.com/api/?size=100&background=ec4899&color=fff&name=' . urlencode($authUser->name) }}"
-                         referrerpolicy="no-referrer"
-                         class="w-12 h-12 rounded-full object-cover border-2 border-pink-500/30 shadow-lg shadow-pink-500/10">
-                    <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#18181b]"></div>
+                        referrerpolicy="no-referrer"
+                        class="w-12 h-12 rounded-full object-cover border-2 border-pink-500/30 shadow-lg shadow-pink-500/10">
+                    <div
+                        class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[#18181b]">
+                    </div>
                 </div>
                 <!-- Info -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <h3 class="text-sm font-bold text-white truncate">{{ $authUser->name }}</h3>
-                        <span class="px-1.5 py-0.5 text-[9px] font-bold bg-pink-500/20 text-pink-400 rounded-md uppercase tracking-wider">You</span>
+                        <span
+                            class="px-1.5 py-0.5 text-[9px] font-bold bg-pink-500/20 text-pink-400 rounded-md uppercase tracking-wider">You</span>
                     </div>
                     <p class="text-[11px] text-pink-400/70 font-mono truncate">
                         {{$authUser->user_tag ?? 'No Tag' }}
@@ -257,67 +331,47 @@ new class extends Component {
 
         <!-- CONTACT LIST (Scrollable) -->
         <div class="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-1">
-
             @forelse ($this->contacts as $contact)
-                        <button
-                            wire:click="selectConversation(null, '{{ $contact->_id }}')"
-                            wire:key="contact-{{ $contact->_id }}"
-                            class="w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 group
-                                   {{ $this->selectedConversationId && optional($this->selectedConversation())->participants && in_array($contact->_id, optional($this->selectedConversation())->participants ?? [])
+                    <button wire:click="selectConversation(null, '{{ $contact->_id }}' )" wire:key="contact-{{ $contact->_id }}"
+                        class="w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 group 
+                                                    {{ ($this->selectedConversationId && in_array($contact->_id, $this->selectedConversation()?->participants ?? []))
                 ? 'bg-[#202024] border border-white/5'
                 : 'hover:bg-[#202024]/60 border border-transparent' }}">
 
-                            <!-- Contact Avatar -->
-                            <div class="relative flex-shrink-0">
-                                <img src="{{ $contact->avatar ?? 'https://ui-avatars.com/api/?size=100&background=3f3f46&color=fff&name=' . urlencode($contact->name) }}"
-                                     referrerpolicy="no-referrer"
-                                     class="w-11 h-11 rounded-full object-cover border border-white/10 group-hover:border-white/20 transition-all shadow-sm">
-                                {{-- Online indicator --}}
-                                @if (($contact->status ?? '') === 'online')
-                                    <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#18181b]"></div>
-                                @else
-                                    <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#52525b] rounded-full border-2 border-[#18181b]"></div>
-                                @endif
-                            </div>
+                        <div class="relative flex-shrink-0"
+                            x-data="{ isOnline: window.onlineUsers.includes('{{ $contact->_id }}') }"
+                            @presence-updated.window="isOnline = window.onlineUsers.includes('{{ $contact->_id }}')">
 
-                            <!-- Contact Info -->
-                            <div class="flex-1 min-w-0 text-left">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-[13px] font-semibold text-white truncate group-hover:text-pink-50 transition-colors">
-                                        {{ $contact->name }}
-                                    </h3>
-                                    {{-- Last message timestamp --}}
-                                    <span class="text-[10px] text-[#52525b] flex-shrink-0 ml-2">
-                                        {{-- You can add last message time here later --}}
-                                    </span>
-                                </div>
-                                <p class="text-[11px] text-[#71717a] truncate mt-0.5">
-                                    @{{ $contact->user_tag ?? 'No Tag' }}
-                                </p>
-                            </div>
+                            <img src="{{ $contact->avatar ?? 'https://ui-avatars.com/api/?size=100&background=3f3f46&color=fff&name=' . urlencode($contact->name) }}"
+                                referrerpolicy="no-referrer"
+                                class="w-11 h-11 rounded-full object-cover border border-white/10 group-hover:border-white/20 transition-all shadow-sm">
 
-                            <!-- Hover Arrow -->
-                            <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg class="w-4 h-4 text-[#52525b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
+                            <div :class="isOnline ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-[#52525b]'"
+                                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#18181b] transition-all duration-500">
                             </div>
-                        </button>
-            @empty
-                <!-- Empty contacts state -->
-                <div class="flex flex-col items-center justify-center py-12 text-center">
-                    <div class="p-4 bg-[#202024] rounded-2xl border border-white/5 mb-4">
-                        <svg class="w-8 h-8 text-[#52525b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                    </div>
-                    <p class="text-[13px] font-medium text-[#52525b]">No contacts yet</p>
-                    <p class="text-[11px] text-[#3f3f46] mt-1">Add friends to start chatting</p>
-                    <button @click="showAddFriend = true"
-                            class="mt-4 px-4 py-2 bg-pink-500/10 text-pink-400 text-[11px] font-bold rounded-xl hover:bg-pink-500/20 transition-all">
-                        + ADD CONTACT
+                        </div>
+
+                        <div class=" flex-1 min-w-0 text-left">
+                            <div class="flex items-center justify-between">
+                                <h3
+                                    class="text-[13px] font-semibold text-white truncate group-hover:text-pink-50 transition-colors">
+                                    {{ $contact->name }}
+                                </h3>
+                            </div>
+                            <p class="text-[11px] text-[#71717a] truncate mt-0.5">
+                                {{ $contact->user_tag ?? 'No Tag' }}
+                            </p>
+                        </div>
+
+                        <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4 text-[#52525b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
                     </button>
+            @empty
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <p class="text-[13px] font-medium text-[#52525b]">No contacts yet</p>
                 </div>
             @endforelse
         </div>
@@ -327,84 +381,75 @@ new class extends Component {
     <!-- MAIN CHAT CANVAS -->
     <div class="flex-1 flex flex-col relative bg-[#09090b] z-10 w-full">
 
-    @if ($selected = $this->selectedConversation())
-        @php
-            $selInfo = $selected->getDisplayInfo();
-            // Logic: If participant_ids only has 1 person, it's a self-chat
-            $isSelf = $selected->type === 'direct' && count($selected->participant_ids ?? []) === 1;
-        @endphp
+        @if ($selected = $this->selectedConversation())
+            @php
+                $selInfo = $selected->getDisplayInfo();
+                $isSelf = $selected->type === 'direct' && count($selected->participant_ids ?? []) === 1;
+                // Get the ID of the other person for the status check
+                $otherUserId = $selInfo['id'] ?? null; 
+            @endphp
 
-        <div class="h-16 flex items-center justify-between px-6 py-4 bg-[#1e1e21]/80 backdrop-blur-md border-b border-[#2a2a2d] z-10 sticky top-0">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-md">
-                    <img src="{{ $selInfo['avatar'] }}" alt="{{ $selInfo['name'] }}"
-                        class="w-full h-full object-cover">
+            <div
+                class="h-16 flex items-center justify-between px-6 py-4 bg-[#1e1e21]/80 backdrop-blur-md border-b border-[#2a2a2d] z-10 sticky top-0">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-md">
+                        <img src="{{ $selInfo['avatar'] }}" alt="{{ $selInfo['name'] }}" class="w-full h-full object-cover">
+                    </div>
+
+                    <div x-data="{ 
+                                get isOnline() { return window.onlineUsers.includes('{{ $otherUserId }}') } 
+                            }">
+                        <h2 class="text-white text-[15px] font-bold">{{ $selInfo['name'] }}</h2>
+                        <p class="text-[11px] font-medium flex items-center gap-1.5">
+                            @if ($isSelf)
+                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                <span class="text-emerald-500">Active (You)</span>
+                            @else
+                                <span :class="isOnline ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-[#71717a]'"
+                                    class="w-1.5 h-1.5 rounded-full transition-all duration-500"></span>
+                                <span :class="isOnline ? 'text-emerald-500' : 'text-[#71717a]'"
+                                    class="transition-colors duration-500" x-text="isOnline ? 'Online' : 'Offline'">
+                                    {{-- Fallback for first load --}}
+                                    {{ ($selInfo['status'] ?? '') === 'online' ? 'Online' : 'Offline' }}
+                                </span>
+                            @endif
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-white text-[15px] font-bold">{{ $selInfo['name'] }}</h2>
-                    <p class="text-[11px] font-medium flex items-center gap-1.5">
-                        {{-- Force Online for Self-Chat --}}
-                        @if ($isSelf || ($selInfo['status'] ?? '') === 'online')
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 
-                            <span class="text-emerald-500">Online</span>
-                        @else
-                            <span class="w-1.5 h-1.5 bg-[#71717a] rounded-full"></span> 
-                            <span class="text-[#71717a]">Offline</span>
-                        @endif
-                    </p>
+
+                <div class="flex items-center gap-5 text-[#a1a1aa]">
+                    <button class="transition hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <div class="flex items-center gap-5 text-[#a1a1aa]">
-                <button class="transition hover:text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </button>
-                <button class="transition hidden md:block hover:text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
-                        </path>
-                    </svg>
-                </button>
+            <div class="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar bg-transparent">
+                {{-- Message list loop --}}
             </div>
-        </div>
 
-        <div class="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar bg-transparent">
-            {{-- Your message list loop --}}
-        </div>
+            @if (!$isSelf)
+                <div class="px-6 py-5 bg-[#1e1e21]/95 backdrop-blur-md border-t border-[#2a2a2d]">
+                    {{-- Textarea --}}
+                </div>
+            @else
+                <div class="px-6 py-4 bg-[#1e1e21]/30 border-t border-[#2a2a2d] text-center">
+                    <span class="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-semibold">Saved Messages</span>
+                </div>
+            @endif
 
-        @if (!$isSelf)
-            <div class="px-6 py-5 bg-[#1e1e21]/95 backdrop-blur-md border-t border-[#2a2a2d]">
-                 {{-- Put your <textarea> and send button here --}}
-            </div>
         @else
-            <div class="px-6 py-4 bg-[#1e1e21]/30 border-t border-[#2a2a2d] text-center">
-                <span class="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-semibold">Saved Messages</span>
+            <div class="flex-1 flex items-center justify-center">
+                <div class="text-center space-y-4">
+                    <h2 class="text-xl font-bold text-white">Your Chat Canvas</h2>
+                    <p class="text-[#71717a] text-sm">Select a conversation to start messaging.</p>
+                </div>
             </div>
         @endif
-
-    @else
-        <div class="flex-1 flex items-center justify-center">
-            <div class="text-center space-y-4">
-                <div class="p-6 bg-[#1e1e21] rounded-3xl inline-block border border-white/5 shadow-2xl">
-                    <svg class="w-12 h-12 text-pink-500/50 mx-auto" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                        </path>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold text-white">Your Chat Canvas</h2>
-                    <p class="text-[#71717a] text-sm">Select a conversation from the left to start messaging.</p>
-                </div>
-            </div>
-        </div>
-    @endif
-</div>
+    </div>
 
 
     <!-- ADD FRIEND MODAL -->
@@ -430,8 +475,8 @@ new class extends Component {
                 <h3 class="text-xl font-bold text-white">Add Contacts</h3>
                 <button @click="showAddFriend = false" class="text-[#71717a] hover:text-white transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
@@ -462,8 +507,7 @@ new class extends Component {
 
             <!-- SLIDING TAB CONTENT -->
             <div class="relative overflow-hidden w-full">
-                <div class="flex transition-transform duration-500 ease-in-out w-[300%]"
-                    :style="addFriendTab === 'id' ? 'transform: translateX(0%)' : (addFriendTab === 'search' ?
+                <div class="flex transition-transform duration-500 ease-in-out w-[300%]" :style="addFriendTab === 'id' ? 'transform: translateX(0%)' : (addFriendTab === 'search' ?
                         'transform: translateX(-33.333%)' : 'transform: translateX(-66.666%)')">
 
                     <!-- TAB: BY ID -->
@@ -478,8 +522,7 @@ new class extends Component {
                                         class="w-full bg-[#18181b] border border-[#2a2a2d] rounded-xl pl-10 pr-12 py-3 text-sm text-white placeholder-[#52525b] focus:ring-1 focus:ring-pink-500/50 outline-none transition-all">
                                     <button type="button" wire:click="searchContact"
                                         class="absolute right-2 p-2 text-[#71717a] hover:text-pink-500 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
@@ -507,9 +550,9 @@ new class extends Component {
                                     </div>
                                     <div class="mb-4">
                                         <h4 class="text-lg font-bold text-white tracking-tight">
-                                            {{ $searchResult->name }}</h4>
-                                        <p
-                                            class="text-[15px] text-pink-500 font-mono tracking-wider uppercase opacity-80">
+                                            {{ $searchResult->name }}
+                                        </h4>
+                                        <p class="text-[15px] text-pink-500 font-mono tracking-wider uppercase opacity-80">
                                             {{ $searchResult->user_tag }}
                                         </p>
                                     </div>
@@ -536,8 +579,7 @@ new class extends Component {
                             </div>
                             <div
                                 class="flex flex-col items-center justify-center py-8 text-[#71717a] opacity-50 text-center">
-                                <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
+                                <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
                                     </path>
@@ -558,8 +600,7 @@ new class extends Component {
                                         class="flex-1 bg-[#18181b] border border-[#2a2a2d] rounded-xl px-4 py-3 text-xs text-[#71717a] outline-none">
                                     <button @click="copy(link)"
                                         class="p-3 bg-pink-500 text-white rounded-xl hover:bg-pink-600 transition shadow-lg shadow-pink-500/10 active:scale-95">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
                                             </path>

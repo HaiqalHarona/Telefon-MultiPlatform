@@ -52,7 +52,7 @@ class Conversation extends Model
      * MongoDB doesn't have pivot tables — participant_ids is a plain array
      * of User ObjectIds stored directly on the conversation document.
      */
-    public function participants()
+    public function participantsUsers()
     {
         return User::whereIn('_id', $this->participant_ids ?? [])->get();
     }

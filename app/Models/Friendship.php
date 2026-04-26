@@ -33,9 +33,9 @@ class Friendship extends Model
     ];
 
     protected $casts = [
-        'blocked_at'  => 'datetime',
+        'blocked_at' => 'datetime',
         'accepted_at' => 'datetime',
-        'metadata'    => 'array',
+        'metadata' => 'array',
     ];
 
     // ── Relationships ──────────────────────────────────────────
@@ -88,7 +88,7 @@ class Friendship extends Model
     public function scopeIncomingFor($query, string $userId)
     {
         return $query->where('friend_id', $userId)
-                     ->where('status', 'pending');
+            ->where('status', 'pending');
     }
 
     // ── Static Helpers ─────────────────────────────────────────
@@ -118,9 +118,9 @@ class Friendship extends Model
         }
 
         return static::create([
-            'user_id'        => $senderId,
-            'friend_id'      => $receiverId,
-            'status'         => 'pending',
+            'user_id' => $senderId,
+            'friend_id' => $receiverId,
+            'status' => 'pending',
             'action_user_id' => $senderId,
         ]);
     }
@@ -140,18 +140,18 @@ class Friendship extends Model
 
         // Update original request to accepted
         $request->update([
-            'status'         => 'accepted',
+            'status' => 'accepted',
             'action_user_id' => $accepterId,
-            'accepted_at'    => $now,
+            'accepted_at' => $now,
         ]);
 
         // Create reciprocal record for the accepter
         static::updateOrCreate(
             ['user_id' => $accepterId, 'friend_id' => $senderId],
             [
-                'status'         => 'accepted',
+                'status' => 'accepted',
                 'action_user_id' => $accepterId,
-                'accepted_at'    => $now,
+                'accepted_at' => $now,
             ]
         );
     }
@@ -196,11 +196,11 @@ class Friendship extends Model
 
         // Create a block record owned by the blocker
         static::create([
-            'user_id'        => $blockerId,
-            'friend_id'      => $blockedId,
-            'status'         => 'blocked',
+            'user_id' => $blockerId,
+            'friend_id' => $blockedId,
+            'status' => 'blocked',
             'action_user_id' => $blockerId,
-            'blocked_at'     => now(),
+            'blocked_at' => now(),
         ]);
     }
 
@@ -235,5 +235,30 @@ class Friendship extends Model
             ->where('friend_id', $blockedId)
             ->where('status', 'blocked')
             ->exists();
+    }
+
+    /**
+     * Get all incoming pending friend requests for a specific user.
+     * Eager loads the 'user' (sender) to prevent N+1 queries in the UI.
+     */
+    public static function getPendingRequests(string $userId)
+    {
+        // We use the existing 'incomingFor' scope you already defined
+        return static::incomingFor($userId)
+            ->with('user')
+            ->latest() 
+            ->get();
+    }
+
+    /**
+     * Optional: Get all pending requests the user has SENT.
+     */
+    public static function getSentRequests(string $userId)
+    {
+        return static::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->with('friend') // Eager load the person they sent it to
+            ->latest()
+            ->get();
     }
 }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,65 +8,148 @@
 
     <!-- Load Tailwind via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <!-- Livewire Styles -->
     @livewireStyles
 </head>
-<body 
-    x-data="{ 
+
+<body x-data="{ 
         theme: localStorage.getItem('theme') || 'dark',
         toggleTheme() {
             this.theme = this.theme === 'dark' ? 'light' : 'dark';
             localStorage.setItem('theme', this.theme);
         }
-    }"
-    :class="theme"
+    }" :class="theme"
     class="font-sans antialiased text-white bg-[#18181b] h-screen overflow-hidden flex flex-col selection:bg-pink-500/30 transition-colors duration-300"
-    :style="theme === 'light' ? 'background-color: #f4f4f5; color: #18181b;' : ''"
->
+    :style="theme === 'light' ? 'background-color: #f4f4f5; color: #18181b;' : ''">
+    <div id="session-container">
+        @if(session()->has('success'))
+            <div id="wire-session-success" class="hidden">{{ session('success') }}</div>
+        @endif
+        @if(session()->has('error'))
+            <div id="wire-session-error" class="hidden">{{ session('error') }}</div>
+        @endif
+    </div>
     <!-- Add theme-specific colors for text/bg when in light mode if not using Tailwind dark: classes everywhere -->
     <style x-ref="themeStyles">
-        .light { background-color: #fdf8f5 !important; color: #432818 !important; }
-        .light .bg-\[\#18181b\] { background-color: #f7f1ed !important; }
-        .light .bg-\[\#1e1e21\] { background-color: #ede0d4 !important; border-bottom: 1px solid #ddc9b4; }
-        .light .bg-\[\#202024\] { background-color: #e6ccb2 !important; }
-        .light .bg-\[\#09090b\] { background-color: #fdf8f5 !important; }
-        .light .border-\[\#2a2a2d\] { border-color: #ddc9b4 !important; }
-        .light .text-white { color: #432818 !important; }
-        .light .text-\[\#a1a1aa\] { color: #7f5539 !important; }
-        .light .text-\[\#71717a\] { color: #9c6644 !important; }
-        .light .hover\:bg-\[\#202024\]:hover { background-color: rgba(127, 85, 57, 0.1) !important; }
-        .light .bg-black { background-color: #ffffff !important; }
-        .light .bg-black.text-white { color: #432818 !important; }
-        .light .bg-\[\#18181b\] { background-color: #f7f1ed !important; }
-        .light input::placeholder { color: #b08968 !important; }
-        .light .bg-white\/10 { background-color: rgba(127, 85, 57, 0.1) !important; }
-        .light .bg-white\/5 { background-color: rgba(127, 85, 57, 0.05) !important; }
-        .light .bg-\[\#1e1e21\]\/80 { background-color: #ede0d4 !important; }
-        .light .bg-\[\#1e1e21\]\/95 { background-color: #ede0d4 !important; }
-        .light .text-emerald-500 { color: #2d6a4f !important; }
-        .light .bg-emerald-500 { background-color: #2d6a4f !important; }
+        .light {
+            background-color: #fdf8f5 !important;
+            color: #432818 !important;
+        }
+
+        .light .bg-\[\#18181b\] {
+            background-color: #f7f1ed !important;
+        }
+
+        .light .bg-\[\#1e1e21\] {
+            background-color: #ede0d4 !important;
+            border-bottom: 1px solid #ddc9b4;
+        }
+
+        .light .bg-\[\#202024\] {
+            background-color: #e6ccb2 !important;
+        }
+
+        .light .bg-\[\#09090b\] {
+            background-color: #fdf8f5 !important;
+        }
+
+        .light .border-\[\#2a2a2d\] {
+            border-color: #ddc9b4 !important;
+        }
+
+        .light .text-white {
+            color: #432818 !important;
+        }
+
+        .light .text-\[\#a1a1aa\] {
+            color: #7f5539 !important;
+        }
+
+        .light .text-\[\#71717a\] {
+            color: #9c6644 !important;
+        }
+
+        .light .hover\:bg-\[\#202024\]:hover {
+            background-color: rgba(127, 85, 57, 0.1) !important;
+        }
+
+        .light .bg-black {
+            background-color: #ffffff !important;
+        }
+
+        .light .bg-black.text-white {
+            color: #432818 !important;
+        }
+
+        .light .bg-\[\#18181b\] {
+            background-color: #f7f1ed !important;
+        }
+
+        .light input::placeholder {
+            color: #b08968 !important;
+        }
+
+        .light .bg-white\/10 {
+            background-color: rgba(127, 85, 57, 0.1) !important;
+        }
+
+        .light .bg-white\/5 {
+            background-color: rgba(127, 85, 57, 0.05) !important;
+        }
+
+        .light .bg-\[\#1e1e21\]\/80 {
+            background-color: #ede0d4 !important;
+        }
+
+        .light .bg-\[\#1e1e21\]\/95 {
+            background-color: #ede0d4 !important;
+        }
+
+        .light .text-emerald-500 {
+            color: #2d6a4f !important;
+        }
+
+        .light .bg-emerald-500 {
+            background-color: #2d6a4f !important;
+        }
 
         /* High-Contrast Label & Icon System */
-        .custom-label, label { 
-            color: #a1a1aa; /* Default Dark Mode label */
+        .custom-label,
+        label {
+            color: #a1a1aa;
+            /* Default Dark Mode label */
             font-weight: 700 !important;
             transition: color 0.3s ease;
         }
 
-        .light .custom-label, .light label { 
-            color: #432818 !important; /* Deep Espresso for Light Mode */
+        .light .custom-label,
+        .light label {
+            color: #432818 !important;
+            /* Deep Espresso for Light Mode */
             opacity: 1 !important;
         }
 
-        .light .text-\[\#432818\]\/50 { color: #432818 !important; opacity: 0.7 !important; }
+        .light .text-\[\#432818\]\/50 {
+            color: #432818 !important;
+            opacity: 0.7 !important;
+        }
 
         /* Sharp Icons */
-        svg { transition: color 0.3s ease; }
-        .light svg { filter: brightness(0.6) sepia(1) hue-rotate(-20deg) saturate(2); }
-        .light .text-pink-500 svg, .light .text-emerald-500 svg { filter: none !important; }
+        svg {
+            transition: color 0.3s ease;
+        }
+
+        .light svg {
+            filter: brightness(0.6) sepia(1) hue-rotate(-20deg) saturate(2);
+        }
+
+        .light .text-pink-500 svg,
+        .light .text-emerald-500 svg {
+            filter: none !important;
+        }
     </style>
-    
+
     <!-- Main Content Slot -->
     <main class="flex-1 flex overflow-hidden">
         {{ $slot }}
@@ -87,4 +171,5 @@
         });
     </script>
 </body>
+
 </html>
