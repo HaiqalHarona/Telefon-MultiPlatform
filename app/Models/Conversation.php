@@ -155,6 +155,7 @@ class Conversation extends Model
         }
 
         return [
+            'id' => (string) $otherUser->_id,
             'name' => $otherUser->name ?? 'Unknown User',
             'avatar' => $otherUser->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name ?? 'U'),
             'status' => $otherUser->status ?? 'offline',

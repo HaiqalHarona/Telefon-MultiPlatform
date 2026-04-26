@@ -120,21 +120,24 @@ erDiagram
 
 ### Message Model (`app/Models/Message.php`)
 
-| Method                                        | Description                                                                                            |
-| :-------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| **Relationships**                             |                                                                                                        |
-| `conversation()`                              | Parent relationship to the Conversation.                                                               |
-| `sender()`                                    | Relationship to the User who sent the message.                                                         |
-| `replyTo()`                                   | Relationship to the parent message if this is a reply.                                                 |
-| `replies()`                                   | Relationship to all messages replying to this one.                                                     |
-| `attachments()`                               | Accessor for sub-document attachments (images/files).                                                  |
-| **Helpers**                                   |                                                                                                        |
-| `markReadBy($userId)`                         | Adds the user to the `read_by` array with a timestamp.                                                 |
-| `isReadBy($userId)`                           | Checks if a specific user has viewed this message.                                                     |
-| `addReaction($userId, $emoji)`                | Adds/Updates an emoji reaction in the `reactions` array.                                               |
-| `removeReaction($userId)`                     | Removes a reaction from the specified user.                                                            |
-| **Static Helpers**                            |                                                                                                        |
-| `getMessages($conversationId, $loadLimit=20)` | Loads `messages` in the conversation. With a message load limit of 20 with paginate built-in function. |
+| Method                                        | Description                                                                                            | Type          |
+| :-------------------------------------------- | :----------------------------------------------------------------------------------------------------- | :------------ |
+| **Relationships**                             |                                                                                                        |               |
+| `conversation()`                              | Parent relationship to the Conversation.                                                               | Relation      |
+| `sender()`                                    | Relationship to the User who sent the message.                                                         | Relation      |
+| `replyTo()`                                   | Relationship to the parent message if this is a reply.                                                 | Relation      |
+| `replies()`                                   | Relationship to all messages replying to this one.                                                     | Relation      |
+| `attachments()`                               | Accessor for sub-document attachments (images/files).                                                  | Relation      |
+| **Helpers (Instance)**                        |                                                                                                        |               |
+| `markReadBy($userId)`                         | Adds the user to the `read_by` array with a timestamp.                                                 | Helper        |
+| `isReadBy($userId)`                           | Checks if a specific user has viewed this message.                                                     | Helper        |
+| `addReaction($userId, $emoji)`                | Adds/Updates an emoji reaction in the `reactions` array.                                               | Helper        |
+| `removeReaction($userId)`                     | Removes a reaction from the specified user.                                                            | Helper        |
+| `isSentByMe()`                                | Checks if the message was sent by the authenticated user.                                              | Helper        |
+| `isSentBy($userId)`                           | Checks if the message was sent by a specific user ID.                                                  | Helper        |
+| **Static Helpers**                            |                                                                                                        |               |
+| `sendMessage($data)`                          | Optimized creation that updates Conversation last activity/message ID.                                 | Static Helper |
+| `getMessages($conversationId, $loadLimit=20)` | Loads messages with pagination and eager-loaded attachments.                                           | Static Helper |
 
 ### Attachment Model (`app/Models/Attachment.php`)
 

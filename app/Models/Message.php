@@ -76,7 +76,7 @@ class Message extends Model
         return $this->embedsMany(Attachment::class);
     }
 
-    // ── Helpers ────────────────────────────────────────────────
+    // ── Helpers (Instance) ─────────────────────────────────────
 
     /**
      * Mark this message as read by a user.
@@ -93,6 +93,16 @@ class Message extends Model
                 'read_at' => now()->toISOString(),
             ]);
         }
+    }
+
+    /**
+     * Check if this message has been read by a user.
+     */
+    public function isReadBy(string $userId): bool
+    {
+        return collect($this->read_by)
+            ->pluck('user_id')
+            ->contains($userId);
     }
 
     /**
@@ -118,23 +128,62 @@ class Message extends Model
     }
 
     /**
-     * Check if this message has been read by a user.
+     * Check if the message was sent by the currently authenticated user.
      */
-    public function isReadBy(string $userId): bool
+    public function isSentByMe(): bool
     {
-        return collect($this->read_by)
-            ->pluck('user_id')
-            ->contains($userId);
+        return (string) $this->sender_id === (string) auth()->id();
     }
 
     /**
-     * Load messages in the conversation
+     * Check if the message was sent by a specific user.
+     */
+    public function isSentBy(string $userId): bool
+    {
+        return (string) $this->sender_id === (string) $userId;
+    }
+
+    // ── Static Helpers ─────────────────────────────────────────
+
+    /**
+     * Optimized helper to create and send a message.
+     * This method handles the creation of the message and automatically updates 
+     * the parent conversation's last activity and message reference.
+     */
+    public static function sendMessage(array $data): self
+    {
+        $message = static::create([
+            'conversation_id' => $data['conversation_id'],
+            'sender_id'       => $data['sender_id'],
+            'type'            => $data['type'] ?? 'text',
+            'body'            => $data['body'] ?? '',
+            'read_by'         => [
+                [
+                    'user_id' => $data['sender_id'],
+                    'read_at' => now()->toISOString()
+                ]
+            ],
+            'reply_to_id'     => $data['reply_to_id'] ?? null,
+            'metadata'        => $data['metadata'] ?? [],
+        ]);
+
+        // This ensures the inbox list loads instantly without complex joins or subqueries.
+        Conversation::where('_id', $data['conversation_id'])->update([
+            'last_message_id'  => $message->_id,
+            'last_activity_at' => now(),
+        ]);
+
+        return $message;
+    }
+
+    /**
+     * Load messages in the conversation with pagination.
      */
     public static function getMessages(string $conversationId, int $loadLimit = 20)
     {
         return static::where('conversation_id', $conversationId)
-        ->with('attachments')
-        ->latest()
-        ->paginate($loadLimit);
+            ->with('attachments')
+            ->latest()
+            ->paginate($loadLimit);
     }
 }
