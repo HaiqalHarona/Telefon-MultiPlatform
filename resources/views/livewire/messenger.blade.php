@@ -198,16 +198,12 @@ new class extends Component {
 
 ?>
 
-<div class="flex h-full w-full bg-[#18181b] overflow-hidden antialiased text-white" x-data="{
+<div class="flex h-full w-full bg-white dark:bg-[#18181b] overflow-hidden antialiased text-gray-900 dark:text-white" x-data="{
     activeTab: 'chats',
     showSettings: false,
     showRequests: false,
     showAddFriend: false,
-    addFriendTab: 'id',
-    toggleTheme() {
-        this.theme = this.theme === 'dark' ? 'light' : 'dark';
-        localStorage.setItem('theme', this.theme);
-    }
+    addFriendTab: 'id'
 }" x-on:friend-request-sent.window="showAddFriend = false">
 
     <!-- NAVIGATION RAIL -->
@@ -258,13 +254,13 @@ new class extends Component {
         </div>
 
         <div class="space-y-4 flex flex-col items-center">
-            <button @click="toggleTheme()" class="p-3 text-[#71717a] transition group relative">
-                <svg x-show="theme === 'dark'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button @click="$store.theme.toggle()" class="p-3 text-[#71717a] transition group relative">
+                <svg x-show="$store.theme.current === 'dark'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z">
                     </path>
                 </svg>
-                <svg x-show="theme === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg x-show="$store.theme.current === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
                     </path>
@@ -273,7 +269,7 @@ new class extends Component {
                     class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Theme</span>
             </button>
 
-            <button @click="showSettings = true; activeTab = 'settings'"
+            <button @click="showSettings = true; activeTab = 'profile'"
                 class="p-3 text-[#71717a] transition group relative">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

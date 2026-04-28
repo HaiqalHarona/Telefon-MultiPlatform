@@ -6,6 +6,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'SanCo' }}</title>
 
+    <script>
+        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+        } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+        }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('theme', {
+                current: savedTheme,
+                
+                set(val) {
+                    this.current = val;
+                    localStorage.setItem('theme', val);
+                    if (val === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.documentElement.classList.remove('light');
+                    } else {
+                        document.documentElement.classList.add('light');
+                        document.documentElement.classList.remove('dark');
+                    }
+                },
+                
+                toggle() {
+                    this.set(this.current === 'dark' ? 'light' : 'dark');
+                }
+            });
+
+            // Expose globally for debugging
+            window.setTheme = (val) => Alpine.store('theme').set(val);
+        });
+    </script>
+
     <!-- Load Tailwind via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -13,15 +50,10 @@
     @livewireStyles
 </head>
 
-<body x-data="{ 
-        theme: localStorage.getItem('theme') || 'dark',
-        toggleTheme() {
-            this.theme = this.theme === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('theme', this.theme);
-        }
-    }" :class="theme"
-    class="font-sans antialiased text-white bg-[#18181b] h-screen overflow-hidden flex flex-col selection:bg-pink-500/30 transition-colors duration-300"
-    :style="theme === 'light' ? 'background-color: #f4f4f5; color: #18181b;' : ''">
+<body x-data 
+    :class="$store.theme.current"
+    class="font-sans antialiased h-screen overflow-hidden flex flex-col selection:bg-pink-500/30 transition-colors duration-300"
+    :style="$store.theme.current === 'light' ? 'background-color: #fdf8f5; color: #432818;' : 'background-color: #18181b; color: white;'">
     <div id="session-container">
         @if(session()->has('success'))
             <div id="wire-session-success" class="hidden">{{ session('success') }}</div>

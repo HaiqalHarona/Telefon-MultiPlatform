@@ -1,82 +1,257 @@
-<!-- PROFILE/SETTINGS OVERLAY -->
-<div x-show="showSettings" 
-     class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 backdrop-blur-sm"
-     x-transition:enter="transition opacity duration-300"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition opacity duration-200"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
-     style="display:none;">
-    
-    <div class="absolute inset-0 bg-black/40" @click="showSettings = false"></div>
+<div x-show="showSettings" class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 backdrop-blur-md"
+    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" style="display:none;"
+    x-cloak>
 
-    <div class="relative w-full max-w-2xl lg:max-w-5xl bg-[#1e1e21] rounded-3xl overflow-hidden shadow-2xl border border-white/5 flex flex-col md:flex-row h-full lg:h-[85vh] max-h-[600px] lg:max-h-[850px]">
-        <div class="w-full md:w-56 bg-[#18181b] p-6 border-r border-white/5 hidden md:block">
-            <h2 class="text-xl font-bold mb-8">Settings</h2>
-            <nav class="h-[calc(100%-4rem)] flex flex-col">
-                <div class="space-y-4 flex-1">
-                    <button @click="activeTab = 'profile'" :class="activeTab === 'profile' ? 'text-pink-500 bg-pink-500/10' : 'text-[#71717a]'" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium">Profile</button>
-                    <button @click="activeTab = 'appearance'" :class="activeTab === 'appearance' ? 'text-pink-500 bg-pink-500/10' : 'text-[#71717a]'" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium">Appearance</button>
-                </div>
+    <div class="absolute inset-0 bg-gray-900/40 dark:bg-black/60 transition-colors duration-300"
+        @click="showSettings = false; activeTab = 'chats'"></div>
 
-                <form method="POST" action="{{ route('logout') }}" class="mt-auto">
-                    @csrf
-                    <button type="submit" class="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition font-medium text-red-500 hover:bg-red-500/10">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        Logout
-                    </button>
-                </form>
+    <div
+        class="relative w-full max-w-3xl lg:max-w-5xl bg-white dark:bg-[#1e1e21] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.2)] dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-200 dark:border-white/10 flex flex-col md:flex-row h-full lg:h-[80vh] max-h-[600px] lg:max-h-[750px] transition-colors duration-300">
+
+        <div
+            class="w-full md:w-64 bg-gray-50 dark:bg-[#141416] p-6 lg:p-8 border-r border-gray-200 dark:border-white/5 hidden md:flex flex-col relative z-10 transition-colors duration-300">
+            <h2
+                class="text-2xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight transition-colors duration-300">
+                Settings</h2>
+            <nav class="flex-1 flex flex-col gap-2">
+                <button @click="activeTab = 'profile'"
+                    :class="activeTab === 'profile' ? 'text-pink-500 dark:text-pink-400 bg-pink-500/10 border-pink-500/20' : 'text-gray-500 dark:text-[#a1a1aa] hover:bg-gray-200/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white border-transparent'"
+                    class="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all duration-200 font-medium border text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Profile
+                </button>
+                <button @click="activeTab = 'appearance'"
+                    :class="activeTab === 'appearance' ? 'text-pink-500 dark:text-pink-400 bg-pink-500/10 border-pink-500/20' : 'text-gray-500 dark:text-[#a1a1aa] hover:bg-gray-200/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white border-transparent'"
+                    class="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all duration-200 font-medium border text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01">
+                        </path>
+                    </svg>
+                    Appearance
+                </button>
             </nav>
+
+            <form method="POST" action="{{ route('logout') }}"
+                class="mt-auto pt-6 border-t border-gray-200 dark:border-white/5 transition-colors duration-300">
+                @csrf
+                <button type="submit"
+                    class="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all duration-200 font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 border border-transparent hover:border-red-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    Logout
+                </button>
+            </form>
         </div>
-        
-        <div class="flex-1 p-6 md:p-8 overflow-y-auto">
-            <div @click="showSettings = false" class="md:hidden mb-4 p-2 text-pink-500 flex items-center gap-2 font-bold cursor-pointer">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Back
+
+        <div
+            class="flex-1 p-6 md:p-10 pb-28 overflow-y-auto relative bg-white dark:bg-[#1e1e21] custom-scrollbar transition-colors duration-300">
+            <div @click="showSettings = false; activeTab = 'chats'"
+                class="md:hidden mb-6 p-2 text-pink-500 flex items-center gap-2 font-bold cursor-pointer hover:bg-pink-500/10 rounded-xl transition w-max">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg> Back
             </div>
 
-            <div x-show="activeTab === 'profile'" class="space-y-8">
-                <div class="flex flex-col items-center">
-                    <img src="https://i.pravatar.cc/150?img=1" class="w-24 md:w-32 h-24 md:h-32 rounded-3xl object-cover border-4 border-pink-500/20 shadow-xl" alt="Me">
-                    <p class="mt-4 text-sm text-[#71717a]">Click to change avatar</p>
-                </div>
-                <div class="space-y-4">
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-[#432818]/50 uppercase tracking-wider custom-label">Display Name</label>
-                        <input type="text" value="{{ auth()->user()->name }}" class="w-full bg-[#fdfaf7] border border-[#ece0d1] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-pink-500/50 transition-colors">
-                    </div>
+            <div x-show="activeTab === 'profile'" x-transition:enter="transition ease-out duration-300 delay-75"
+                x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+                class="max-w-xl mx-auto space-y-10" style="display:none;">
 
-                    <div class="space-y-1">
-                        <label class="text-[11px] font-bold text-[#432818]/50 uppercase tracking-wider custom-label">User Tag</label>
-                        <div class="flex items-center gap-2">
-                             <input type="text" readonly value="{{ auth()->user()->user_tag ?? 'Not Set' }}" class="flex-1 bg-[#fdfaf7]/50 border border-[#ece0d1] rounded-xl px-4 py-3 text-sm text-[#432818]/60 cursor-not-allowed">
-                             <button class="p-3 bg-pink-500/10 text-pink-600 rounded-xl hover:bg-pink-500/20 transition-colors">
-                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                             </button>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">My
+                        Profile</h3>
+                    <p class="text-gray-500 dark:text-[#a1a1aa] text-sm transition-colors duration-300">Manage your
+                        personal information and how others see you.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-8">
+                    <div class="relative group cursor-pointer flex-shrink-0">
+                        <div
+                            class="w-28 h-28 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-2 border-gray-200 dark:border-white/10 shadow-xl dark:shadow-2xl transition-all duration-300 group-hover:scale-105 group-hover:border-pink-500/50">
+                            <img src="{{ auth()->user()->avatar }}" referrerpolicy="no-referrer"
+                                class="w-full h-full object-cover" alt="Me">
+                            <div
+                                class="absolute inset-0 bg-black/50 dark:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <p class="text-[10px] text-[#432818]/40 mt-1">Share this tag with friends so they can add you.</p>
+                    </div>
+                    <div class="text-center sm:text-left pt-2">
+                        <h4 class="text-gray-900 dark:text-white font-bold text-xl transition-colors duration-300">
+                            {{ auth()->user()->name }}
+                        </h4>
+                        <p
+                            class="text-pink-500 dark:text-pink-400 text-sm font-medium mt-1 transition-colors duration-300">
+                            {{ auth()->user()->user_tag ?? '#NotSet' }}
+                        </p>
+                        <button
+                            class="mt-4 px-4 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-white text-xs font-semibold rounded-lg transition-colors border border-gray-200 dark:border-white/10">Change
+                            Avatar</button>
+                    </div>
+                </div>
+
+                <div
+                    class="space-y-6 bg-gray-50 dark:bg-[#141416] p-6 rounded-3xl border border-gray-200 dark:border-white/5 transition-colors duration-300">
+                    <div class="space-y-2">
+                        <label
+                            class="text-[12px] font-bold text-gray-500 dark:text-[#a1a1aa] uppercase tracking-wider flex items-center gap-2 transition-colors duration-300">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Display Name
+                        </label>
+                        <input type="text" value="{{ auth()->user()->name }}"
+                            class="w-full bg-white dark:bg-[#1e1e21] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all shadow-sm dark:shadow-inner">
+                    </div>
+
+                    <div class="space-y-2" x-data="{ copied: false }">
+                        <label
+                            class="text-[12px] font-bold text-gray-500 dark:text-[#a1a1aa] uppercase tracking-wider flex items-center gap-2 transition-colors duration-300">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                            </svg>
+                            User Tag
+                        </label>
+                        <div class="flex items-center gap-3 relative">
+                            <input x-ref="userTag" type="text" readonly
+                                value="{{ auth()->user()->user_tag ?? 'Not Set' }}"
+                                class="flex-1 bg-gray-100 dark:bg-[#1e1e21]/80 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3.5 text-sm text-gray-500 dark:text-[#71717a] cursor-not-allowed shadow-inner select-all transition-colors duration-300">
+
+                            <button type="button"
+                                @click="navigator.clipboard.writeText($refs.userTag.value); copied = true; setTimeout(() => copied = false, 2000)"
+                                class="p-3.5 rounded-xl transition-all duration-200 flex-shrink-0 border"
+                                :class="copied ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20' : 'bg-pink-500/10 text-pink-500 dark:text-pink-400 border-pink-500/20 hover:bg-pink-500/20 hover:scale-105'">
+                                <svg x-show="!copied" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <svg x-show="copied" class="w-5 h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" style="display: none;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </button>
+
+                            <div x-show="copied" x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 translate-y-1"
+                                class="absolute -top-10 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg"
+                                style="display: none;">
+                                Copied!
+                                <div class="absolute -bottom-1 right-5 w-2.5 h-2.5 bg-emerald-500 transform rotate-45">
+                                </div>
+                            </div>
+                        </div>
+                        <p
+                            class="text-[11px] text-gray-400 dark:text-[#71717a] mt-2 flex items-center gap-1.5 transition-colors duration-300">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Share this tag with friends so they can add you.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div x-show="activeTab === 'appearance'" class="space-y-6">
-                <h3 class="text-lg font-bold">Theme</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <button @click="theme = 'light'; localStorage.setItem('theme', 'light')" 
-                            :class="theme === 'light' ? 'border-pink-500 bg-pink-500/5' : 'border-white/5'" 
-                            class="p-6 border-2 rounded-2xl text-center group transition">
-                        <span class="font-bold text-sm">Light Mode</span>
-                    </button>
-                    <button @click="theme = 'dark'; localStorage.setItem('theme', 'dark')" 
-                            :class="theme === 'dark' ? 'border-pink-500 bg-pink-500/5' : 'border-white/5'" 
-                            class="p-6 border-2 rounded-2xl text-center group transition">
-                        <span class="font-bold text-sm">Dark Mode</span>
-                    </button>
+            <div x-show="activeTab === 'appearance'" x-transition:enter="transition ease-out duration-300 delay-75"
+                x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+                class="max-w-xl mx-auto space-y-8" style="display:none;">
+
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">
+                        Appearance</h3>
+                    <p class="text-gray-500 dark:text-[#a1a1aa] text-sm transition-colors duration-300">Customize how
+                        the application looks to you.</p>
+                </div>
+
+                <div
+                    class="space-y-4 bg-gray-50 dark:bg-[#141416] p-6 rounded-3xl border border-gray-200 dark:border-white/5 transition-colors duration-300">
+                    <label
+                        class="text-[12px] font-bold text-gray-500 dark:text-[#a1a1aa] uppercase tracking-wider block mb-4 transition-colors duration-300">Theme</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        <button @click="$store.theme.set('light')"
+                            :class="$store.theme.current === 'light' ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/50' : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e21] hover:border-gray-300 dark:hover:border-white/30'"
+                            class="p-6 border-2 rounded-2xl text-center group transition-all duration-200 relative overflow-hidden">
+                            <div
+                                class="w-12 h-12 bg-white rounded-full mx-auto mb-4 shadow-sm border border-gray-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span
+                                class="font-bold text-sm text-gray-900 dark:text-white transition-colors duration-300">Light
+                                Mode</span>
+                            <div x-show="$store.theme.current === 'light'" class="absolute top-3 right-3 text-pink-500">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        </button>
+
+                        <button @click="$store.theme.set('dark')"
+                            :class="$store.theme.current === 'dark' ? 'border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/50' : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1e1e21] hover:border-gray-300 dark:hover:border-white/30'"
+                            class="p-6 border-2 rounded-2xl text-center group transition-all duration-200 relative overflow-hidden">
+                            <div
+                                class="w-12 h-12 bg-gray-900 rounded-full mx-auto mb-4 shadow-inner border border-gray-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span
+                                class="font-bold text-sm text-gray-900 dark:text-white transition-colors duration-300">Dark
+                                Mode</span>
+                            <div x-show="$store.theme.current === 'dark'" class="absolute top-3 right-3 text-pink-500">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-8 flex justify-end gap-3">
-                <button @click="showSettings = false" class="px-6 py-2 rounded-xl text-pink-500 font-bold border border-pink-500/20">Save</button>
+            <div
+                class="absolute bottom-0 left-0 right-0 p-6 md:px-10 bg-gradient-to-t from-white via-white dark:from-[#1e1e21] dark:via-[#1e1e21] to-transparent flex justify-end gap-3 pointer-events-none pt-12 transition-colors duration-300">
+                <div class="pointer-events-auto flex gap-3 w-full sm:w-auto">
+                    <button @click="showSettings = false; activeTab = 'chats'"
+                        class="flex-1 sm:flex-none px-6 py-3 rounded-xl text-gray-500 dark:text-[#a1a1aa] font-semibold hover:bg-gray-100 dark:hover:bg-white/5 transition-colors border border-transparent">Cancel</button>
+                    <button @click="showSettings = false; activeTab = 'chats'"
+                        class="flex-1 sm:flex-none px-8 py-3 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-bold transition-all shadow-[0_0_15px_rgba(236,72,153,0.3)] hover:shadow-[0_0_20px_rgba(236,72,153,0.5)] transform hover:-translate-y-0.5">Save
+                        Changes</button>
+                </div>
             </div>
         </div>
     </div>
