@@ -412,223 +412,229 @@ new class extends Component {
     <!-- MAIN CHAT CANVAS -->
     <div class="flex-1 flex flex-col relative bg-[#09090b] z-10 w-full">
 
-        @if ($selected = $this->selectedConversation())
-                @php
-                    $selInfo = $selected->getDisplayInfo();
-                    $isSelf = $selected->type === 'direct' && count($selected->participant_ids ?? []) === 1;
-                    $otherUserId = (string) ($selInfo['_id'] ?? $selInfo['id'] ?? ''); 
-                @endphp
+    @if ($selected = $this->selectedConversation())
+        @php
+            $selInfo = $selected->getDisplayInfo();
+            $isSelf = $selected->type === 'direct' && count($selected->participant_ids ?? []) === 1;
+            $otherUserId = (string) ($selInfo['_id'] ?? $selInfo['id'] ?? ''); 
+        @endphp
 
-                <div
-                    class="h-16 flex items-center justify-between px-6 py-4 bg-[#1e1e21]/80 backdrop-blur-md border-b border-[#2a2a2d] z-10 sticky top-0">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-md">
-                            <img src="{{ $selInfo['avatar'] }}" alt="{{ $selInfo['name'] }}" class="w-full h-full object-cover">
-                        </div>
-
-                        <div wire:key="header-presence-{{ $otherUserId }}" x-data="{ 
-                                        isOnline: window.onlineUsers.includes('{{ $otherUserId }}') 
-                                     }"
-                            @presence-updated.window="isOnline = window.onlineUsers.includes('{{ $otherUserId }}')">
-
-                            <h2 class="text-white text-[15px] font-bold">{{ $selInfo['name'] }}</h2>
-
-                            <p class="text-[11px] font-medium flex items-center gap-1.5">
-                                @if ($isSelf)
-                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_5px_#10b981]"></span>
-                                    <span class="text-emerald-500">Active (You)</span>
-                                @else
-                                    <span :class="isOnline ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-[#71717a]'"
-                                        class="w-1.5 h-1.5 rounded-full transition-all duration-500"></span>
-
-                                    <span :class="isOnline ? 'text-emerald-500' : 'text-[#71717a]'"
-                                        class="transition-colors duration-500" x-text="isOnline ? 'Online' : 'Offline'">
-                                        {{-- Fallback for first load --}}
-                                        {{ ($selInfo['status'] ?? '') === 'online' ? 'Online' : 'Offline' }}
-                                    </span>
-                                @endif
-                                {{-- end isSelf check --}}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-5 text-[#a1a1aa]">
-                        <button class="transition hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </button>
-                        <button class="transition hidden md:block hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
-                                </path>
-                            </svg>
-                        </button>
-                    </div>
+        <div class="h-16 flex items-center justify-between px-6 py-4 bg-[#1e1e21]/80 backdrop-blur-md border-b border-[#2a2a2d] z-10 sticky top-0">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-md">
+                    <img src="{{ $selInfo['avatar'] }}" alt="{{ $selInfo['name'] }}" class="w-full h-full object-cover">
                 </div>
 
-                <div id="chat-messages-container"
-                    wire:key="conversation-{{ $selected->_id }}"
-                    class="flex-1 overflow-y-auto py-6 custom-scrollbar bg-transparent flex flex-col" x-data="{
-                 convoId: '{{ $this->selectedConversationId }}',
+                <div wire:key="header-presence-{{ $otherUserId }}" x-data="{ 
+                        isOnline: window.onlineUsers.includes('{{ $otherUserId }}') 
+                     }"
+                    @presence-updated.window="isOnline = window.onlineUsers.includes('{{ $otherUserId }}')">
 
-                 init() {
-                     // 1. Scroll down immediately when opening the chat
-                     this.scrollToBottom();
+                    <h2 class="text-white text-[15px] font-bold">{{ $selInfo['name'] }}</h2>
 
-                     // 2. Open the Reverb Connection for this specific chat room
-                     if (this.convoId) {
-                         window.Echo.private('message.' + this.convoId)
-                             .listen('MessageSent', (e) => {
+                    <p class="text-[11px] font-medium flex items-center gap-1.5">
+                        @if ($isSelf)
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_5px_#10b981]"></span>
+                            <span class="text-emerald-500">Active (You)</span>
+                        @else
+                            <span :class="isOnline ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-[#71717a]'"
+                                class="w-1.5 h-1.5 rounded-full transition-all duration-500"></span>
 
-                                 // 3. MAGIC: Tell Livewire to fetch the new message from the DB and redraw the HTML!
-                                 $wire.$refresh().then(() => {
-                                     // 4. Scroll down so you can actually read the new message
-                                     this.scrollToBottom();
-                                 });
-
-                             });
-                     }
-                 },
-
-                 scrollToBottom() {
-                     const container = document.getElementById('chat-messages-container');
-                     if(container) {
-                         container.scrollTop = container.scrollHeight;
-                     }
-                 }
-             }" @scroll-bottom.window="setTimeout(() => scrollToBottom(), 50)">
-
-                    @if ($selected->messages && $selected->messages->count() > 0)
-                        @php 
-                            $previousMessage = null; 
-                        @endphp
-
-                        @foreach ($selected->messages as $message)
-                            @php
-                                // Check if the message is yours
-                                $isYou = (string) $message->sender_id === (string) auth()->id();
-                                
-                                // Set Name & Avatar
-                                $senderName = $isYou ? 'You' : ($selInfo['name'] ?? 'User');
-                                $senderAvatar = $isYou 
-                                    ? (auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=Me') 
-                                    : ($selInfo['avatar'] ?? 'https://ui-avatars.com/api/?background=3f3f46&color=fff&name=User');
-
-                                // Logic: Show full header if it's the first message, a different user, or more than 5 minutes have passed
-                                $showHeader = true;
-                                if ($previousMessage && (string) $previousMessage->sender_id === (string) $message->sender_id) {
-                                    $diffInMinutes = $previousMessage->created_at->diffInMinutes($message->created_at);
-                                    if ($diffInMinutes < 5) {
-                                        $showHeader = false;
-                                    }
-                                }
-                            @endphp
-
-                            @if ($showHeader)
-                                <div class="mt-4 px-6 py-1 hover:bg-[#202024]/60 transition-colors group flex gap-4" wire:key="msg-{{ $message->_id }}">
-                                    <img src="{{ $senderAvatar }}" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 flex-shrink-0 mt-0.5 shadow-sm">
-                                    
-                                    <div class="flex flex-col flex-1 min-w-0">
-                                        <div class="flex items-baseline gap-2 mb-0.5">
-                                            <span class="text-[15px] font-medium {{ $isYou ? 'text-pink-400' : 'text-white' }} hover:underline cursor-pointer tracking-wide">
-                                                {{ $senderName }}
-                                            </span>
-                                            <span class="text-[11px] font-medium text-[#71717a]">
-                                                {{ $message->created_at->format('M j, g:i A') }}
-                                            </span>
-                                        </div>
-                                        <div class="text-[14px] text-[#dbdee1] leading-[1.375rem] whitespace-pre-wrap">{{ $message->body }}</div>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="mt-0.5 px-6 py-1 hover:bg-[#202024]/60 transition-colors group flex gap-4 relative" wire:key="msg-{{ $message->_id }}">
-                                    
-                                    <div class="w-10 flex-shrink-0 text-right pr-2 select-none opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span class="text-[10px] font-medium text-[#71717a] leading-[1.375rem]">
-                                            {{ $message->created_at->format('g:i A') }}
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="flex flex-col flex-1 min-w-0">
-                                        <div class="text-[14px] text-[#dbdee1] leading-[1.375rem] whitespace-pre-wrap">{{ $message->body }}</div>
-                                    </div>
-                                </div>
-                            @endif 
-                            {{-- end showHeader check --}}
-
-                            @php 
-                                // Save this message to compare against the next one in the loop
-                                $previousMessage = $message; 
-                            @endphp
-                        @endforeach 
-                        {{-- end messages loop --}}
-                    @else
-                        <div class="flex-1 flex flex-col items-center justify-center text-center px-4">
-                            <div class="w-16 h-16 rounded-full overflow-hidden mb-4 shadow-lg border-2 border-white/5">
-                                <img src="{{ $selInfo['avatar'] ?? '' }}" class="w-full h-full object-cover">
-                            </div>
-                            <h3 class="text-white text-lg font-bold mb-1">{{ $selInfo['name'] ?? 'User' }}</h3>
-                            <p class="text-[#71717a] text-[13px]">This is the beginning of your direct message history.</p>
-                        </div>
-                    @endif 
-                    {{-- end has messages check --}}
-
-                </div>
-
-                @if (!$isSelf)
-                    <div class="px-6 py-5 bg-[#1e1e21]/95 backdrop-blur-md border-t border-[#2a2a2d]">
-                        <form wire:submit="messageUser" class="relative flex items-center gap-3">
-                            <button type="button" class="text-[#52525b] hover:text-white transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
-                                    </path>
-                                </svg>
-                            </button>
-
-                            <input type="text" wire:model="messageBody" placeholder="Message {{ $selInfo['name'] }}..."
-                                class="flex-1 bg-[#202024] text-white text-[13px] px-4 py-3 rounded-xl border border-white/5 focus:outline-none focus:border-pink-500/50 transition-colors placeholder:text-[#52525b]"
-                                autocomplete="off">
-
-                            <button type="submit"
-                                class="bg-pink-500 hover:bg-pink-600 text-white p-2.5 rounded-xl transition-all shadow-[0_0_10px_rgba(236,72,153,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
-                                wire:loading.attr="disabled">
-                                <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                @else
-                    <div class="px-6 py-4 bg-[#1e1e21]/30 border-t border-[#2a2a2d] text-center">
-                        <span class="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-semibold">Saved Messages</span>
-                    </div>
-                @endif
-                {{-- end isSelf footer check --}}
-
-        @else
-            <div class="flex-1 flex items-center justify-center">
-                <div class="text-center space-y-4">
-                    <div class="p-6 bg-[#1e1e21] rounded-3xl inline-block border border-white/5 shadow-2xl">
-                        <svg class="w-12 h-12 text-pink-500/50 mx-auto" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-white">Your Chat Canvas</h2>
-                        <p class="text-[#71717a] text-sm">Select a conversation from the left to start messaging.</p>
-                    </div>
+                            <span :class="isOnline ? 'text-emerald-500' : 'text-[#71717a]'"
+                                class="transition-colors duration-500" x-text="isOnline ? 'Online' : 'Offline'">
+                                {{-- Fallback for first load --}}
+                                {{ ($selInfo['status'] ?? '') === 'online' ? 'Online' : 'Offline' }}
+                            </span>
+                        @endif
+                        {{-- end isSelf check --}}
+                    </p>
                 </div>
             </div>
+
+            <div class="flex items-center gap-5 text-[#a1a1aa]">
+                <button class="transition hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </button>
+                <button class="transition hidden md:block hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="chat-messages-container"
+            wire:key="conversation-{{ $selected->_id }}"
+            class="flex-1 overflow-y-auto py-6 custom-scrollbar bg-transparent flex flex-col" x-data="{
+             convoId: '{{ $this->selectedConversationId }}',
+
+             init() {
+                 // 1. Scroll down immediately when opening the chat
+                 this.scrollToBottom();
+
+                 // 2. Open the Reverb Connection for this specific chat room
+                 if (this.convoId) {
+                     window.Echo.private('message.' + this.convoId)
+                         .listen('MessageSent', (e) => {
+
+                             // 3. MAGIC: Tell Livewire to fetch the new message from the DB and redraw the HTML!
+                             $wire.$refresh().then(() => {
+                                 // 4. Scroll down so you can actually read the new message
+                                 this.scrollToBottom();
+                             });
+
+                         });
+                 }
+             },
+
+             scrollToBottom() {
+                 const container = document.getElementById('chat-messages-container');
+                 if(container) {
+                     container.scrollTop = container.scrollHeight;
+                 }
+             }
+         }" @scroll-bottom.window="setTimeout(() => scrollToBottom(), 50)">
+
+            @if ($selected->messages && $selected->messages->count() > 0)
+                @php 
+                    $previousMessage = null; 
+                @endphp
+
+                @foreach ($selected->messages as $message)
+                    @php
+                        // Check if the message is yours
+                        $isYou = (string) $message->sender_id === (string) auth()->id();
+                        
+                        // Set Name & Avatar
+                        $senderName = $isYou ? 'You' : ($selInfo['name'] ?? 'User');
+                        $senderAvatar = $isYou 
+                            ? (auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=Me') 
+                            : ($selInfo['avatar'] ?? 'https://ui-avatars.com/api/?background=3f3f46&color=fff&name=User');
+
+                        // Logic: Show full header if it's the first message, a different user, or more than 5 minutes have passed
+                        $showHeader = true;
+                        if ($previousMessage && (string) $previousMessage->sender_id === (string) $message->sender_id) {
+                            $diffInMinutes = $previousMessage->created_at->diffInMinutes($message->created_at);
+                            if ($diffInMinutes < 5) {
+                                $showHeader = false;
+                            }
+                        }
+                    @endphp
+
+                    @if ($showHeader)
+                        <div class="mt-5 px-6 py-1.5 hover:bg-[#202024]/50 transition-all duration-200 group flex gap-4 rounded-lg" wire:key="msg-{{ $message->_id }}">
+                            <img src="{{ $senderAvatar }}" class="w-10 h-10 rounded-full cursor-pointer hover:opacity-80 hover:scale-105 flex-shrink-0 mt-0.5 shadow-sm transition-all duration-200 ring-1 ring-white/5">
+                            
+                            <div class="flex flex-col flex-1 min-w-0">
+                                {{-- Modified this flex container to push the header timestamp to the right --}}
+                                <div class="flex items-baseline justify-between mb-1 w-full pr-2">
+                                    <span class="text-[15px] font-semibold {{ $isYou ? 'text-pink-400' : 'text-white' }} hover:underline cursor-pointer tracking-wide">
+                                        {{ $senderName }}
+                                    </span>
+                                    <span class="text-[11px] font-medium text-[#52525b] group-hover:text-[#71717a] group-hover:tracking-[0.08em] transition-all duration-300 ease-out">
+                                        {{ $message->created_at->format('M j, g:i A') }}
+                                    </span>
+                                </div>
+                                <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words">{{ $message->body }}</div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="px-6 py-[3px] hover:bg-[#202024]/50 transition-all duration-200 group flex gap-4 relative rounded-lg" wire:key="msg-{{ $message->_id }}">
+                            
+                            {{-- 1. Empty spacer to keep text aligned with the avatar messages --}}
+                            <div class="w-10 flex-shrink-0 select-none"></div>
+                            
+                            {{-- 2. Message Body --}}
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words">{{ $message->body }}</div>
+                            </div>
+
+                            {{-- 3. Timestamp moved to the right, appearing on hover --}}
+                            <div class="flex-shrink-0 flex items-center justify-end pl-2 pr-2 select-none opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                <span class="text-[10px] font-medium text-[#52525b] group-hover:text-[#71717a] group-hover:tracking-[0.12em] leading-[1.5rem] transition-all duration-300 ease-out">
+                                    {{ $message->created_at->format('g:i A') }}
+                                </span>
+                            </div>
+
+                        </div>
+                    @endif 
+                    {{-- end showHeader check --}}
+
+                    @php 
+                        // Save this message to compare against the next one in the loop
+                        $previousMessage = $message; 
+                    @endphp
+                @endforeach 
+                {{-- end messages loop --}}
+            @else
+                <div class="flex-1 flex flex-col items-center justify-center text-center px-4">
+                    <div class="w-16 h-16 rounded-full overflow-hidden mb-4 shadow-lg border-2 border-white/5">
+                        <img src="{{ $selInfo['avatar'] ?? '' }}" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-white text-lg font-bold mb-1">{{ $selInfo['name'] ?? 'User' }}</h3>
+                    <p class="text-[#71717a] text-[13px]">This is the beginning of your direct message history.</p>
+                </div>
+            @endif 
+            {{-- end has messages check --}}
+
+        </div>
+
+        @if (!$isSelf)
+            <div class="px-6 py-5 bg-[#1e1e21]/95 backdrop-blur-md border-t border-[#2a2a2d]">
+                <form wire:submit="messageUser" class="relative flex items-center gap-3">
+                    <button type="button" class="text-[#52525b] hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <input type="text" wire:model="messageBody" placeholder="Message {{ $selInfo['name'] }}..."
+                        class="flex-1 bg-[#202024] text-white text-[13px] px-4 py-3 rounded-xl border border-white/5 focus:outline-none focus:border-pink-500/50 transition-colors placeholder:text-[#52525b]"
+                        autocomplete="off">
+
+                    <button type="submit"
+                        class="bg-pink-500 hover:bg-pink-600 text-white p-2.5 rounded-xl transition-all shadow-[0_0_10px_rgba(236,72,153,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        wire:loading.attr="disabled">
+                        <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        @else
+            <div class="px-6 py-4 bg-[#1e1e21]/30 border-t border-[#2a2a2d] text-center">
+                <span class="text-[#71717a] text-[10px] uppercase tracking-[0.2em] font-semibold">Saved Messages</span>
+            </div>
         @endif
-        {{-- end selected conversation check --}}
-    </div>
+        {{-- end isSelf footer check --}}
+
+    @else
+        <div class="flex-1 flex items-center justify-center">
+            <div class="text-center space-y-4">
+                <div class="p-6 bg-[#1e1e21] rounded-3xl inline-block border border-white/5 shadow-2xl">
+                    <svg class="w-12 h-12 text-pink-500/50 mx-auto" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white">Your Chat Canvas</h2>
+                    <p class="text-[#71717a] text-sm">Select a conversation from the left to start messaging.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+    {{-- end selected conversation check --}}
+</div>
 
 
     <!-- ADD FRIEND MODAL -->
@@ -829,7 +835,7 @@ new class extends Component {
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
-        }
+        }   
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #3f3f46;
