@@ -1,7 +1,10 @@
 import "./bootstrap";
 import { Notyf } from "notyf";
+import _sodium from 'libsodium-wrappers';
 
 window.onlineUsers = [];
+
+window.sodium = _sodium;
 
 // A global instance of Notyf
 window.notyf = new Notyf({

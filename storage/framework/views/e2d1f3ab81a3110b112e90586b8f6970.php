@@ -6,7 +6,7 @@
     x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" style="display:none;"
     x-data="{
-        profileImagePreview: '{{ auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name) }}',
+        profileImagePreview: '<?php echo e(auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name)); ?>',
         cropper: null,
         showCropModal: false,
         initCropper(imageElement) {
@@ -93,9 +93,9 @@
                 </button>
             </nav>
 
-            <form method="POST" action="{{ route('logout') }}"
+            <form method="POST" action="<?php echo e(route('logout')); ?>"
                 class="mt-auto pt-6 border-t border-gray-200 dark:border-white/5 transition-colors duration-300">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <button type="submit"
                     class="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all duration-200 font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 border border-transparent hover:border-red-500/20">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,11 +148,12 @@
                         </div>
                     </div>
                     <div class="text-center sm:text-left pt-2">
-                        <h4 class="text-gray-900 dark:text-white font-bold text-xl transition-colors duration-300" x-text="$wire.profileName || '{{ auth()->user()->name }}'">
+                        <h4 class="text-gray-900 dark:text-white font-bold text-xl transition-colors duration-300" x-text="$wire.profileName || '<?php echo e(auth()->user()->name); ?>'">
                         </h4>
                         <p
                             class="text-pink-500 dark:text-pink-400 text-sm font-medium mt-1 transition-colors duration-300">
-                            {{ auth()->user()->user_tag ?? '#NotSet' }}
+                            <?php echo e(auth()->user()->user_tag ?? '#NotSet'); ?>
+
                         </p>
                         <label for="avatarUpload"
                             class="inline-block mt-4 px-4 py-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-white text-xs font-semibold rounded-lg transition-colors border border-gray-200 dark:border-white/10 cursor-pointer">Change
@@ -186,7 +187,7 @@
                         </label>
                         <div class="flex items-center gap-3 relative">
                             <input x-ref="userTag" type="text" readonly
-                                value="{{ auth()->user()->user_tag ?? 'Not Set' }}"
+                                value="<?php echo e(auth()->user()->user_tag ?? 'Not Set'); ?>"
                                 class="flex-1 bg-gray-100 dark:bg-[#1e1e21]/80 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3.5 text-sm text-gray-500 dark:text-[#71717a] cursor-not-allowed shadow-inner select-all transition-colors duration-300">
 
                             <button type="button"
@@ -329,4 +330,4 @@
             </div>
         </div>
     </div>
-</div>
+</div><?php /**PATH C:\Users\johan\Desktop\Laravel\SanCo\resources\views/livewire/messenger/settings-overlay.blade.php ENDPATH**/ ?>

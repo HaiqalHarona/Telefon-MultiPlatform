@@ -80,7 +80,6 @@ class SocialController extends Controller
         $tag = '';
 
         while (!$unique) {
-            // Generate a random unique tag like 'goog_a1b2c3d4e5' or 'ghub_a1b2c3d4e5'
             $tag = $prefix . '_' . Str::lower(Str::random(10));
 
             if (!User::where('user_tag', $tag)->exists()) {

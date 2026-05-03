@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'SanCo' }}</title>
+    <title><?php echo e($title ?? 'SanCo'); ?></title>
 
     <script>
         // On page load or when changing themes, best to add inline in `head` to avoid FOUC
@@ -44,10 +44,11 @@
     </script>
 
     <!-- Load Tailwind via Vite -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
 
     <!-- Livewire Styles -->
-    @livewireStyles
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
+
 </head>
 
 <body x-data 
@@ -55,12 +56,12 @@
     class="font-sans antialiased h-screen overflow-hidden flex flex-col selection:bg-pink-500/30 transition-colors duration-300"
     :style="$store.theme.current === 'light' ? 'background-color: #fdf8f5; color: #432818;' : 'background-color: #18181b; color: white;'">
     <div id="session-container">
-        @if(session()->has('success'))
-            <div id="wire-session-success" class="hidden">{{ session('success') }}</div>
-        @endif
-        @if(session()->has('error'))
-            <div id="wire-session-error" class="hidden">{{ session('error') }}</div>
-        @endif
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session()->has('success')): ?>
+            <div id="wire-session-success" class="hidden"><?php echo e(session('success')); ?></div>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session()->has('error')): ?>
+            <div id="wire-session-error" class="hidden"><?php echo e(session('error')); ?></div>
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
     <!-- Add theme-specific colors for text/bg when in light mode if not using Tailwind dark: classes everywhere -->
     <style x-ref="themeStyles">
@@ -185,24 +186,26 @@
 
     <!-- Main Content Slot -->
     <main class="flex-1 flex overflow-hidden">
-        {{ $slot }}
+        <?php echo e($slot); ?>
+
     </main>
 
     <!-- Livewire Scripts -->
-    @livewireScripts
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::scripts(); ?>
+
 
     <!-- Global Notifications -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            @if(session('success'))
-                window.notyf.success("{{ session('success') }}");
-            @endif
+            <?php if(session('success')): ?>
+                window.notyf.success("<?php echo e(session('success')); ?>");
+            <?php endif; ?>
 
-            @if(session('error'))
-                window.notyf.error("{{ session('error') }}");
-            @endif
+            <?php if(session('error')): ?>
+                window.notyf.error("<?php echo e(session('error')); ?>");
+            <?php endif; ?>
         });
     </script>
 </body>
 
-</html>
+</html><?php /**PATH C:\Users\johan\Desktop\Laravel\SanCo\resources\views/layouts/app.blade.php ENDPATH**/ ?>
