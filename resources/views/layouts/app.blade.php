@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'SanCo' }}</title>
 
+
+    <script>
+        window.onlineUsers = window.onlineUsers || [];
+        window.waitFor = (libraryName) => {
+            return new Promise(resolve => {
+                if (window[libraryName]) return resolve(window[libraryName]);
+                const interval = setInterval(() => {
+                    if (window[libraryName]) {
+                        clearInterval(interval);
+                        resolve(window[libraryName]);
+                    }
+                }, 50);
+            });
+        };
+    </script>
+
     <script>
         // On page load or when changing themes, best to add inline in `head` to avoid FOUC
         const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -20,7 +36,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.store('theme', {
                 current: savedTheme,
-                
+
                 set(val) {
                     this.current = val;
                     localStorage.setItem('theme', val);
@@ -32,7 +48,7 @@
                         document.documentElement.classList.remove('dark');
                     }
                 },
-                
+
                 toggle() {
                     this.set(this.current === 'dark' ? 'light' : 'dark');
                 }
@@ -50,15 +66,15 @@
     @livewireStyles
 </head>
 
-<body x-data 
-    :class="$store.theme.current"
+<body x-data :class="$store.theme.current"
     class="font-sans antialiased h-screen overflow-hidden flex flex-col selection:bg-pink-500/30 transition-colors duration-300"
-    :style="$store.theme.current === 'light' ? 'background-color: #fdf8f5; color: #432818;' : 'background-color: #18181b; color: white;'">
+    :style="$store.theme.current === 'light' ? 'background-color: #fdf8f5; color: #432818;' :
+        'background-color: #18181b; color: white;'">
     <div id="session-container">
-        @if(session()->has('success'))
+        @if (session()->has('success'))
             <div id="wire-session-success" class="hidden">{{ session('success') }}</div>
         @endif
-        @if(session()->has('error'))
+        @if (session()->has('error'))
             <div id="wire-session-error" class="hidden">{{ session('error') }}</div>
         @endif
     </div>
@@ -194,11 +210,11 @@
     <!-- Global Notifications -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            @if(session('success'))
+            @if (session('success'))
                 window.notyf.success("{{ session('success') }}");
             @endif
 
-            @if(session('error'))
+            @if (session('error'))
                 window.notyf.error("{{ session('error') }}");
             @endif
         });

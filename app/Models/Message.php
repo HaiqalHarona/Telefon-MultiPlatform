@@ -24,7 +24,7 @@ class Message extends Model
     ];
 
     protected $casts = [
-        'body' => 'array',
+        // 'body' => 'array', // Commented out for plain text messages
         'read_by' => 'array',
         'reactions' => 'array',
         'is_edited' => 'boolean',
@@ -152,11 +152,19 @@ class Message extends Model
      */
     public static function sendMessage(array $data): self
     {
+        // Handle plain text messages (non-E2EE)
+        // If body is an array with recipient ID as key, extract the plain text
+        $body = $data['body'] ?? '';
+        if (is_array($body) && count($body) === 1) {
+            // Extract the first value from the array (plain text message)
+            $body = reset($body);
+        }
+
         $message = static::create([
             'conversation_id' => $data['conversation_id'],
             'sender_id' => $data['sender_id'],
             'type' => $data['type'] ?? 'text',
-            'body' => $data['body'] ?? [],
+            'body' => $body,
             'read_by' => [
                 [
                     'user_id' => $data['sender_id'],

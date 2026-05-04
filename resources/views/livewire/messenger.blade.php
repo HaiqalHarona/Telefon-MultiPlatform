@@ -271,7 +271,7 @@ new class extends Component {
                 </svg>
             </div>
 
-            <button @click="activeTab = 'chats'; showSettings = false"
+            <button @click="activeTab = 'chats'; showSettings = false; showRequests = false; showAddFriend = false"
                 :class="activeTab === 'chats' ? 'text-white' : 'text-[#71717a]'"
                 class="p-3 rounded-xl transition relative group">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +282,8 @@ new class extends Component {
                 <span
                     class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Chats</span>
             </button>
-            <button @click="showRequests = true" :class="showRequests ? 'text-white' : 'text-[#71717a]'"
+            <button @click="showRequests = true; showSettings = false; showAddFriend = false; activeTab = ''" 
+                :class="showRequests ? 'text-white' : 'text-[#71717a]'"
                 class="p-3 rounded-xl transition relative group">
 
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,13 +291,13 @@ new class extends Component {
                         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                     </path>
                 </svg>
-                @if ($this->incomingRequest->count() > 0)
+                @if ($this->incomingRequest->count() > 99)
                     <span
-                        class="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-medium text-white">
+                        class="absolute top-2 right-1 flex h-4 w-auto min-w-[1rem] px-1 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white">99+</span>
+                @elseif ($this->incomingRequest->count() > 0)
+                    <span
+                        class="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
                         {{ $this->incomingRequest->count() }}</span>
-                @elseif($this->incomingRequest->count() > 99)
-                    <span
-                        class="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-medium text-white">99+</span>
                 @endif
                 {{-- end incoming request count --}}
 
@@ -315,7 +316,7 @@ new class extends Component {
                         d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z">
                     </path>
                 </svg>
-                <svg x-show="$store.theme.current === 'light'" class="w-6 h-6" fill="none" stroke="currentColor"
+                <svg x-show="$store.theme.current === 'light'" style="display: none;" class="w-6 h-6" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
@@ -325,7 +326,7 @@ new class extends Component {
                     class="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">Theme</span>
             </button>
 
-            <button @click="showSettings = true; activeTab = 'profile'"
+            <button @click="showSettings = true; activeTab = 'profile'; showRequests = false; showAddFriend = false"
                 class="p-3 text-[#71717a] transition group relative">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -464,7 +465,7 @@ new class extends Component {
 
 
     <!-- MAIN CHAT CANVAS -->
-    <div class="flex-1 flex flex-col relative bg-[#09090b] z-10 w-full" x-data="e2eEngine">
+    <div class="flex-1 flex flex-col relative bg-[#09090b] z-10 w-full">
         @if ($selected = $this->selectedConversation())
             @php
                 // Get the formatted display information for the conversation header
@@ -476,8 +477,14 @@ new class extends Component {
                 // Extract the ID of the other user for real-time presence tracking, handling different ID key formats
                 $otherUserId = (string) ($selInfo['_id'] ?? ($selInfo['id'] ?? ''));
 
-                // Get the public key
-                $recipientPubKey = User::find($otherUserId)->public_key ?? '';
+                // Get the public key safely
+                $recipientPubKey = '';
+                if (!empty($otherUserId)) {
+                    $u = User::find($otherUserId);
+                    if ($u) {
+                        $recipientPubKey = $u->public_key ?? '';
+                    }
+                }
             @endphp
 
             <div
@@ -536,18 +543,15 @@ new class extends Component {
                 x-data="{
                     convoId: '{{ $this->selectedConversationId }}',
                 
-                    init() {
-                        // 1. Scroll down immediately when opening the chat
+                    async init() {
                         this.scrollToBottom();
                 
-                        // 2. Open the Reverb Connection for this specific chat room
                         if (this.convoId) {
+                            await window.waitFor('Echo');
                             window.Echo.private('message.' + this.convoId)
                                 .listen('MessageSent', (e) => {
                 
-                                    // 3. MAGIC: Tell Livewire to fetch the new message from the DB and redraw the HTML!
                                     $wire.$refresh().then(() => {
-                                        // 4. Scroll down so you can actually read the new message
                                         this.scrollToBottom();
                                     });
                 
@@ -612,9 +616,8 @@ new class extends Component {
                                             {{ $message->created_at->format('M j, g:i A') }}
                                         </span>
                                     </div>
-                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words"
-                                        x-text="decryptMessage(@js($message->body), '{{ auth()->id() }}')">
-                                        <span class="text-[#52525b] animate-pulse text-[11px]">Decrypting...</span>
+                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words">
+                                        {{ $message->body }}
                                     </div>
                                 </div>
                             </div>
@@ -627,9 +630,8 @@ new class extends Component {
 
                                 {{-- Message Body --}}
                                 <div class="flex flex-col flex-1 min-w-0">
-                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words"
-                                        x-text="decryptMessage(@js($message->body), '{{ auth()->id() }}')">
-                                        <span class="text-[#52525b] animate-pulse text-[11px]">Decrypting...</span>
+                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words">
+                                        {{ $message->body }}
                                     </div>
                                 </div>
 
@@ -667,8 +669,7 @@ new class extends Component {
 
             @if (!$isSelf)
                 <div class="px-6 py-5 bg-[#1e1e21]/95 backdrop-blur-md border-t border-[#2a2a2d]">
-                    <form
-                        @submit.prevent="encryptAndSend('{{ $otherUserId }}', '{{ $recipientPubKey }}', '{{ auth()->id() }}')"
+                    <form wire:submit.prevent="messageUser({ '{{ $otherUserId }}': $event.target.querySelector('input').value })"
                         class="relative flex items-center gap-3">
                         <button type="button" class="text-[#52525b] hover:text-white transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,28 +679,17 @@ new class extends Component {
                             </svg>
                         </button>
 
-                        <input type="text" x-model="inputText" placeholder="Message {{ $selInfo['name'] }}..."
+                        <input type="text" name="message" placeholder="Message {{ $selInfo['name'] }}..."
                             class="flex-1 bg-[#202024] text-white text-[13px] px-4 py-3 rounded-xl border border-white/5 focus:outline-none focus:border-pink-500/50 transition-colors placeholder:text-[#52525b]"
-                            autocomplete="off"
-                            :disabled="!isReady || '{{ $recipientPubKey }}'
-                            === ''">
+                            autocomplete="off">
 
                         <button type="submit"
-                            class="bg-pink-500 hover:bg-pink-600 text-white p-2.5 rounded-xl transition-all shadow-[0_0_10px_rgba(236,72,153,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
-                            :disabled="!isReady || '{{ $recipientPubKey }}'
-                            === ''">
+                            class="bg-pink-500 hover:bg-pink-600 text-white p-2.5 rounded-xl transition-all shadow-[0_0_10px_rgba(236,72,153,0.2)]">
                             <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
                             </svg>
                         </button>
                     </form>
-
-                    @if (empty($recipientPubKey))
-                        <div
-                            class="absolute -top-8 left-6 text-[11px] font-bold tracking-wider text-red-500 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                            Waiting for user to join and generate keys...
-                        </div>
-                    @endif
                 </div>
             @else
                 <div class="px-6 py-4 bg-[#1e1e21]/30 border-t border-[#2a2a2d] text-center">
@@ -941,96 +931,179 @@ new class extends Component {
             border-radius: 4px;
         }
     </style>
+    <!-- E2EE script commented out for Opera GX compatibility -->
+    <!--
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('e2eEngine', () => ({
+        // Define it as a global function so Alpine can ALWAYS find it
+        function getE2eEngine() {
+            return {
                 myKeys: null,
                 isReady: false,
+                isGeneratingKeys: false,
+                keyGenerationError: null,
                 inputText: '',
+                sodium: null, // Store sodium reference
 
                 async init() {
+                    // Auto-initialize keys on component mount
+                    console.log('E2EE engine initializing...');
+                    await this.generateKeys();
+                },
+
+                async generateKeys() {
                     try {
-                        // Wait for the encryption library to fully load in the browser
-                        await sodium.ready;
+                        this.isGeneratingKeys = true;
+                        this.keyGenerationError = null;
                         
-                        // Check if the user already has encryption keys saved in their browser's local storage
-                        let pubHex = localStorage.getItem('e2e_pub');
-                        let privHex = localStorage.getItem('e2e_priv');
+                        // 1. Robust polling for sodium library - works in ALL browsers
+                        console.log('Waiting for sodium library...');
+                        let attempts = 0;
+                        const maxAttempts = 100; // 10 seconds max (100 * 100ms)
+                        
+                        while (!window.sodium && attempts < maxAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            attempts++;
+                            if (attempts % 10 === 0) {
+                                console.log(`Still waiting for sodium... (attempt ${attempts}/${maxAttempts})`);
+                            }
+                        }
+                        
+                        if (!window.sodium) {
+                            throw new Error('Sodium library not loaded after 10 seconds');
+                        }
+                        
+                        this.sodium = window.sodium;
+                        console.log('Sodium library found, waiting for ready state...');
+                        
+                        // 2. Wait for sodium to be ready
+                        if (this.sodium.ready) {
+                            await this.sodium.ready;
+                        }
+                        
+                        console.log('Sodium library ready');
+                        
+                        let userId = '{{ auth()->id() }}';
+                        let pubKeyName = 'e2e_pub_' + userId;
+                        let privKeyName = 'e2e_priv_' + userId;
+
+                        let pubHex = localStorage.getItem(pubKeyName);
+                        let privHex = localStorage.getItem(privKeyName);
 
                         if (!pubHex || !privHex) {
-                            // If they don't have keys, generate a fresh pair of cryptographic keys
-                            let keypair = sodium.crypto_box_keypair();
+                            console.log('Generating new E2EE keypair...');
+                            let keypair = this.sodium.crypto_box_keypair();
                             this.myKeys = {
                                 privateKey: keypair.privateKey,
                                 publicKey: keypair.publicKey
                             };
 
-                            pubHex = sodium.to_hex(this.myKeys.publicKey);
+                            pubHex = this.sodium.to_hex(this.myKeys.publicKey);
                             
-                            // Save both keys securely in the browser's local storage for future visits
-                            // The private key stays here and NEVER leaves the browser
-                            localStorage.setItem('e2e_priv', sodium.to_hex(this.myKeys.privateKey));
-                            localStorage.setItem('e2e_pub', pubHex);
+                            localStorage.setItem(privKeyName, this.sodium.to_hex(this.myKeys.privateKey));
+                            localStorage.setItem(pubKeyName, pubHex);
 
                             if (this.$wire) {
-                                // Send ONLY the public key to the server so other users can use it to encrypt messages meant for this user
-                                this.$wire.registerPublicKey(pubHex);
-                            } else {
-                                console.error('Key not initialised');
+                                await this.$wire.registerPublicKey(pubHex);
                             }
+                            console.log('New E2EE keys generated and saved');
                         } else {
-                            // If keys were already saved from a previous visit, load them back into memory
+                            console.log('Loading existing E2EE keys...');
                             this.myKeys = {
-                                privateKey: sodium.from_hex(privHex),
-                                publicKey: sodium.from_hex(pubHex),
+                                privateKey: this.sodium.from_hex(privHex),
+                                publicKey: this.sodium.from_hex(pubHex),
                             };
-
-                            // Mark the component as ready to send and receive encrypted messages
-                            this.isReady = true;
                         }
+                        
+                        this.isReady = true;
+                        this.isGeneratingKeys = false;
+                        console.log('E2EE engine is ready');
+                        
                     } catch (e) {
-                        console.error("Init failed:", e);
+                        console.error("Key generation failed:", e);
+                        this.keyGenerationError = e.message || 'Unknown error';
+                        this.isGeneratingKeys = false;
+                        
+                        // Auto-retry after 2 seconds if failed
+                        setTimeout(() => {
+                            if (!this.isReady) {
+                                console.log('Auto-retrying key generation...');
+                                this.generateKeys();
+                            }
+                        }, 2000);
                     }
                 },
 
                 async encryptAndSend(recipientId, recipientPubKeyHex, myId) {
-                    if (!this.inputText.trim() || !recipientPubKeyHex) return;
+                    // Triple-check everything before proceeding
+                    if (!this.inputText.trim() || !recipientPubKeyHex || !this.sodium || !this.myKeys || !this.myKeys.publicKey) {
+                        console.error('Encryption failed: missing required data', {
+                            hasInput: !!this.inputText.trim(),
+                            hasRecipientKey: !!recipientPubKeyHex,
+                            hasSodium: !!this.sodium,
+                            hasMyKeys: !!this.myKeys,
+                            hasPublicKey: !!(this.myKeys && this.myKeys.publicKey)
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        let recipientPubKey = this.sodium.from_hex(recipientPubKeyHex);
+                        let encForThem = this.sodium.crypto_box_seal(this.inputText, recipientPubKey);
+                        let encForMe = this.sodium.crypto_box_seal(this.inputText, this.myKeys.publicKey);
 
-                    let recipientPubKey = sodium.from_hex(recipientPubKeyHex);
+                        let ciphertexts = {
+                            [recipientId]: this.sodium.to_base64(encForThem),
+                            [myId]: this.sodium.to_base64(encForMe)
+                        };
 
-                    let encForThem = sodium.crypto_box_seal(this.inputText, recipientPubKey);
-                    let encForMe = sodium.crypto_box_seal(this.inputText, this.myKeys.publicKey);
-
-                    let ciphertexts = {
-                        [recipientId]: sodium.to_base64(encForThem),
-                        [myId]: sodium.to_base64(encForMe)
-                    };
-
-                    this.$wire.messageUser(ciphertexts);
-                    this.inputText = '';
+                        console.log('Encrypted message sent:', { recipientId, myId });
+                        this.$wire.messageUser(ciphertexts);
+                        this.inputText = '';
+                    } catch (e) {
+                        console.error('Encryption error:', e);
+                        // Show error to user
+                        if (this.$wire) {
+                            this.$wire.dispatch('show-toast', {
+                                type: 'error',
+                                message: 'Failed to encrypt message: ' + e.message
+                            });
+                        }
+                    }
                 },
 
                 decryptMessage(ciphertextsObj, myId) {
-                    if (!this.isReady || !ciphertextsObj) return '...';
-
+                    // Triple-check everything before proceeding
+                    if (!this.isReady || !ciphertextsObj || !this.sodium || !this.myKeys || !this.myKeys.publicKey || !this.myKeys.privateKey) {
+                        console.error('Decryption failed: missing required data', {
+                            isReady: this.isReady,
+                            hasCiphertexts: !!ciphertextsObj,
+                            hasSodium: !!this.sodium,
+                            hasMyKeys: !!this.myKeys,
+                            hasPublicKey: !!(this.myKeys && this.myKeys.publicKey),
+                            hasPrivateKey: !!(this.myKeys && this.myKeys.privateKey)
+                        });
+                        return '...';
+                    }
+                    
                     try {
                         let myCiphertextB64 = ciphertextsObj[myId];
                         if (!myCiphertextB64) return '[Not encrypted for this device]';
-
-                        let ciphertext = sodium.from_base64(myCiphertextB64);
-
-                        let decrypted = sodium.crypto_box_seal_open(
+                        
+                        let ciphertext = this.sodium.from_base64(myCiphertextB64);
+                        let decrypted = this.sodium.crypto_box_seal_open(
                             ciphertext,
                             this.myKeys.publicKey,
                             this.myKeys.privateKey
                         );
-
-                        return sodium.to_string(decrypted);
+                        
+                        return this.sodium.to_string(decrypted);
                     } catch (e) {
+                        console.error('Decryption error:', e);
                         return '[Decryption Failed]';
                     }
                 }
-            }));
-        });
+            };
+        }
     </script>
+    -->
 </div>

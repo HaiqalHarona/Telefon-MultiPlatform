@@ -97,6 +97,7 @@
                 class="mt-auto pt-6 border-t border-gray-200 dark:border-white/5 transition-colors duration-300">
                 @csrf
                 <button type="submit"
+                    @click="sessionStorage.clear();"
                     class="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all duration-200 font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 border border-transparent hover:border-red-500/20">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
