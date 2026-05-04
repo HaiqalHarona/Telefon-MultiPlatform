@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "989b43ec2ccfeafba629a56032ed4414",
+    "content-hash": "274e6230cc17b500ec9a32028aa156dc",
     "packages": [
         {
             "name": "brick/math",
@@ -264,71 +264,6 @@
                 }
             ],
             "time": "2025-01-03T16:18:33+00:00"
-        },
-        {
-            "name": "codelieutenant/laravel-crypto",
-            "version": "v0.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/MalusevDevelopment/laravel-crypto.git",
-                "reference": "4552b566dd1461f3f9342db0b7d28bd13a5472d2"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/MalusevDevelopment/laravel-crypto/zipball/4552b566dd1461f3f9342db0b7d28bd13a5472d2",
-                "reference": "4552b566dd1461f3f9342db0b7d28bd13a5472d2",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "ext-sodium": "*",
-                "php": ">=7.3"
-            },
-            "require-dev": {
-                "orchestra/testbench": "^5.3",
-                "phpbench/phpbench": "@dev"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "Hmac": "BrosSquad\\LaravelCrypto\\Facades\\Hmac",
-                        "Base64": "BrosSquad\\LaravelCrypto\\Facades\\Base64",
-                        "Random": "BrosSquad\\LaravelCrypto\\Facades\\Random",
-                        "Hashing": "BrosSquad\\LaravelCrypto\\Facades\\Hashing"
-                    },
-                    "providers": [
-                        "BrosSquad\\LaravelCrypto\\HashingServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "BrosSquad\\LaravelCrypto\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dusan Malusev",
-                    "email": "dusan.998@outlook.com"
-                }
-            ],
-            "description": "Common Crypto algorithms used in php(laravel) applications",
-            "support": {
-                "issues": "https://github.com/MalusevDevelopment/laravel-crypto/issues",
-                "source": "https://github.com/MalusevDevelopment/laravel-crypto/tree/v0.1.0"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/CodeLieutenant",
-                    "type": "github"
-                }
-            ],
-            "time": "2020-08-07T12:47:43+00:00"
         },
         {
             "name": "dflydev/dot-access-data",

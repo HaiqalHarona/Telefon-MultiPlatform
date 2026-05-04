@@ -4,10 +4,11 @@ namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
 
+
 class Message extends Model
 {
-    protected $connection = 'mongodb';
 
+    protected $connection = 'mongodb';
     protected $collection = 'messages';
 
     protected $fillable = [
@@ -24,12 +25,11 @@ class Message extends Model
     ];
 
     protected $casts = [
-        // 'body' => 'array', // Commented out for plain text messages
-        'read_by' => 'array',
-        'reactions' => 'array',
-        'is_edited' => 'boolean',
-        'edited_at' => 'datetime',
-        'metadata' => 'array',
+        'read_by'     => 'array',
+        'reactions'   => 'array',
+        'is_edited'   => 'boolean',
+        'edited_at'   => 'datetime',
+        'metadata'    => 'array',
     ];
 
     protected $with = ['sender'];
@@ -115,7 +115,7 @@ class Message extends Model
 
         $this->push('reactions', [
             'user_id' => $userId,
-            'emoji' => $emoji,
+            'emoji'   => $emoji,
         ]);
     }
 
@@ -147,36 +147,29 @@ class Message extends Model
 
     /**
      * Optimized helper to create and send a message.
-     * This method handles the creation of the message and automatically updates
+     * This method handles the creation of the message and automatically updates 
      * the parent conversation's last activity and message reference.
      */
     public static function sendMessage(array $data): self
     {
-        // Handle plain text messages (non-E2EE)
-        // If body is an array with recipient ID as key, extract the plain text
-        $body = $data['body'] ?? '';
-        if (is_array($body) && count($body) === 1) {
-            // Extract the first value from the array (plain text message)
-            $body = reset($body);
-        }
-
         $message = static::create([
             'conversation_id' => $data['conversation_id'],
-            'sender_id' => $data['sender_id'],
-            'type' => $data['type'] ?? 'text',
-            'body' => $body,
-            'read_by' => [
+            'sender_id'       => $data['sender_id'],
+            'type'            => $data['type'] ?? 'text',
+            'body'            => $data['body'] ?? '',
+            'read_by'         => [
                 [
                     'user_id' => $data['sender_id'],
-                    'read_at' => now()->toISOString(),
-                ],
+                    'read_at' => now()->toISOString()
+                ]
             ],
-            'reply_to_id' => $data['reply_to_id'] ?? null,
-            'metadata' => $data['metadata'] ?? [],
+            'reply_to_id'     => $data['reply_to_id'] ?? null,
+            'metadata'        => $data['metadata'] ?? [],
         ]);
 
+        // This ensures the inbox list loads instantly without complex joins or subqueries.
         Conversation::where('_id', $data['conversation_id'])->update([
-            'last_message_id' => $message->_id,
+            'last_message_id'  => $message->_id,
             'last_activity_at' => now(),
         ]);
 
