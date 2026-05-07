@@ -542,15 +542,15 @@ new class extends Component {
                     @else
                         <div class="px-6 py-[3px] hover:bg-[#202024]/50 transition-all duration-200 group flex gap-4 relative rounded-lg" wire:key="msg-{{ $message->_id }}">
                             
-                            {{-- 1. Empty spacer to keep text aligned with the avatar messages --}}
+                            {{-- Empty spacer to keep text aligned with the avatar messages --}}
                             <div class="w-10 flex-shrink-0 select-none"></div>
                             
-                            {{-- 2. Message Body --}}
+                            {{-- Message Body --}}
                             <div class="flex flex-col flex-1 min-w-0">
                                 <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words">{{ $message->body }}</div>
                             </div>
 
-                            {{-- 3. Timestamp moved to the right, appearing on hover --}}
+                            {{-- Timestamp moved to the right, appearing on hover --}}
                             <div class="flex-shrink-0 flex items-center justify-end pl-2 pr-2 select-none opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <span class="text-[10px] font-medium text-[#52525b] group-hover:text-[#71717a] group-hover:tracking-[0.12em] leading-[1.5rem] transition-all duration-300 ease-out">
                                     {{ $message->created_at->format('g:i A') }}
