@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "alpinejs": "^3.15.11",
+        "bip39": "^3.1.0",
         "notyf": "^3.10.0"
     }
 }

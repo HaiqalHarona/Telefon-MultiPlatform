@@ -1,5 +1,6 @@
 import "./bootstrap";
 import { Notyf } from "notyf";
+import * as bip39 from 'bip39';
 
 window.onlineUsers = [];
 

@@ -13,22 +13,24 @@
 </head>
 <body class="font-sans antialiased text-gray-100 bg-[#18181b]">
     
+    <div id="session-container">
+        @if(session()->has('success'))
+            <div id="wire-session-success" class="hidden">{{ session('success') }}</div>
+        @endif
+        @if(session()->has('error'))
+            <div id="wire-session-error" class="hidden">{{ session('error') }}</div>
+        @endif
+    </div>
+    
     {{ $slot }}
 
     <!-- Livewire Scripts -->
     @livewireScripts
 
-    <!-- Global Notifications -->
+    <!-- Global Notifications - Handled by Livewire hook in app.js -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            @if(session('success'))
-                window.notyf.success("{{ session('success') }}");
-            @endif
-
-            @if(session('error'))
-                window.notyf.error("{{ session('error') }}");
-            @endif
-        });
+        // Notifications are handled by the Livewire hook in resources/js/app.js
+        // which shows session flash messages and removes them after display
     </script>
 </body>
 </html>
