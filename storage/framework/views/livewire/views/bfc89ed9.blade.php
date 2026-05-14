@@ -567,22 +567,15 @@ use App\Events\LoadContactList;
                 </button>
             </div>
 
-            <!-- MODAL NAV BAR -->
             <div class="relative flex bg-[#18181b] p-1 rounded-2xl mb-8 overflow-hidden">
                 <div class="absolute top-1 bottom-1 left-1 transition-all duration-300 ease-out bg-[#202024] rounded-xl shadow-sm z-0"
-                    :style="addFriendTab === 'id' ? 'width: 32%; left: 4px' : (addFriendTab === 'search' ?
-                        'width: 32%; left: 34%' : 'width: 32%; left: 66%')">
+                    :style="addFriendTab === 'id' ? 'width: calc(50% - 4px); left: 4px' : 'width: calc(50% - 4px); left: 50%'">
                 </div>
 
                 <button @click="addFriendTab = 'id'"
                     :class="addFriendTab === 'id' ? 'text-pink-500' : 'text-[#71717a] hover:text-white'"
                     class="relative flex-1 py-2.5 text-xs font-bold rounded-xl transition duration-200 z-10">
                     BY ID
-                </button>
-                <button @click="addFriendTab = 'search'"
-                    :class="addFriendTab === 'search' ? 'text-pink-500' : 'text-[#71717a] hover:text-white'"
-                    class="relative flex-1 py-2.5 text-xs font-bold rounded-xl transition duration-200 z-10">
-                    SEARCH
                 </button>
                 <button @click="addFriendTab = 'link'"
                     :class="addFriendTab === 'link' ? 'text-pink-500' : 'text-[#71717a] hover:text-white'"
@@ -591,18 +584,14 @@ use App\Events\LoadContactList;
                 </button>
             </div>
 
-            <!-- SLIDING TAB CONTENT -->
             <div class="relative overflow-hidden w-full">
-                <div class="flex transition-transform duration-500 ease-in-out w-[300%]"
-                    :style="addFriendTab === 'id' ? 'transform: translateX(0%)' : (addFriendTab === 'search' ?
-                        'transform: translateX(-33.333%)' : 'transform: translateX(-66.666%)')">
+                <div class="flex transition-transform duration-500 ease-in-out w-[200%]"
+                    :style="addFriendTab === 'id' ? 'transform: translateX(0%)' : 'transform: translateX(-50%)'">
 
-                    <!-- TAB: BY ID -->
-                    <div class="w-1/3 flex-shrink-0 px-1">
+                    <div class="w-1/2 flex-shrink-0 px-1">
                         <form wire:submit.prevent="addFriend" class="space-y-5">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-bold text-[#71717a] uppercase tracking-wider ml-1">User
-                                    Tag ID</label>
+                                <label class="text-[10px] font-bold text-[#71717a] uppercase tracking-wider ml-1">User Tag ID</label>
                                 <div class="relative flex items-center">
                                     <span class="absolute left-4 text-pink-500 font-bold">@</span>
                                     <input type="text" wire:model="searchUserTag" placeholder="SanCo_usertag"
@@ -632,16 +621,13 @@ use App\Events\LoadContactList;
                                         <img src="{{ $searchResult->avatar ?? 'https://ui-avatars.com/api/?size=100&background=ec4899&color=fff&name=' . urlencode($searchResult->name) }}"
                                             referrerpolicy="no-referrer"
                                             class="w-16 h-16 rounded-2xl border border-white/10 object-cover shadow-md">
-                                        <div
-                                            class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#202024]">
-                                        </div>
+                                        <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#202024]"></div>
                                     </div>
                                     <div class="mb-4">
                                         <h4 class="text-lg font-bold text-white tracking-tight">
                                             {{ $searchResult->name }}
                                         </h4>
-                                        <p
-                                            class="text-[15px] text-pink-500 font-mono tracking-wider uppercase opacity-80">
+                                        <p class="text-[15px] text-pink-500 font-mono tracking-wider uppercase opacity-80">
                                             {{ $searchResult->user_tag }}
                                         </p>
                                     </div>
@@ -651,37 +637,10 @@ use App\Events\LoadContactList;
                                     </button>
                                 </div>
                             @endif
-                            {{-- end searchResult check --}}
                         </form>
                     </div>
 
-                    <!-- TAB: SEARCH -->
-                    <div class="w-1/3 flex-shrink-0 px-1">
-                        <div class="space-y-6">
-                            <div class="relative">
-                                <input type="text" placeholder="Search by user tag"
-                                    class="w-full bg-[#18181b] border border-[#2a2a2d] rounded-2xl px-5 py-3.5 text-white placeholder-[#71717a] focus:ring-1 focus:ring-pink-500/50 outline-none transition-all">
-                                <svg class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#71717a]"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-                            <div
-                                class="flex flex-col items-center justify-center py-8 text-[#71717a] opacity-50 text-center">
-                                <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                                    </path>
-                                </svg>
-                                <p class="text-sm">Enter a search term to find people</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TAB: INVITE LINK -->
-                    <div class="w-1/3 flex-shrink-0 px-1">
+                    <div class="w-1/2 flex-shrink-0 px-1">
                         <div class="space-y-6">
                             <div class="bg-pink-500/5 border border-pink-500/10 rounded-2xl p-5">
                                 <p class="text-sm text-[#a1a1aa] mb-4">Share this link with your friends to instantly
@@ -706,7 +665,6 @@ use App\Events\LoadContactList;
                 </div>
             </div>
 
-            <!-- FOOTER: OWN TAG -->
             <div class="mt-10 pt-6 border-t border-white/5">
                 <div class="flex items-center justify-between bg-[#18181b] p-4 rounded-2xl border border-white/5">
                     <div>
@@ -721,7 +679,7 @@ use App\Events\LoadContactList;
                         <svg x-show="!copied" class="w-4 h-4 text-[#71717a]" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
                             </path>
                         </svg>
                         <svg x-show="copied" class="w-4 h-4 text-white" fill="none" stroke="currentColor"
@@ -732,8 +690,8 @@ use App\Events\LoadContactList;
                     </button>
                 </div>
             </div>
-        </div> {{-- end modal inner container --}}
-    </div> {{-- end modal outer container --}}
+        </div> 
+    </div>{{-- end modal outer container --}}
 
     @include('livewire.messenger.settings-overlay')
     @include('livewire.messenger.pending-requests-overlay')
