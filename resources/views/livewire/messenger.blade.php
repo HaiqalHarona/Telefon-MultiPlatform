@@ -299,7 +299,7 @@ new class extends Component {
         addFriendTab: 'id',
     
         init() {
-            let userId = '{{ auth()->id() }}';
+            let userId = @js(auth()->id());
             window.Echo.private('user.' + userId).listen('IncomingRequest', (e) => {
     
                 $wire.$refresh();
@@ -596,7 +596,7 @@ new class extends Component {
             <div id="chat-messages-container" wire:key="conversation-{{ $selected->_id }}"
                 class="flex-1 overflow-y-auto py-6 custom-scrollbar bg-transparent flex flex-col text-left"
                 x-data="{
-                    convoId: '{{ $this->selectedConversationId }}',
+                    convoId: @js($this->selectedConversationId),
                 
                     init() {
                         // Scroll down immediately when opening the chat
@@ -672,20 +672,20 @@ new class extends Component {
                                         </span>
                                     </div>
                                     <div x-data="{
-                                        decryptedBody: '{{ $message->body }}',
+                                        decryptedBody: @js($message->body),
                                         isEncrypted: {{ ($message->metadata['is_encrypted'] ?? false) ? 'true' : 'false' }},
                                         async init() {
                                             if (this.isEncrypted) {
-                                                const userId = '{{ auth()->id() }}';
+                                                const userId = @js(auth()->id());
                                                 const privateKey = sessionStorage.getItem('e2e_private_' + userId);
                                                 const publicKey = sessionStorage.getItem('e2e_public_' + userId);
-                                                const encKeys = @json($message->metadata['enc_keys'] ?? []);
+                                                const encKeys = @js($message->metadata['enc_keys'] ?? []);
                                                 const encKeyForMe = encKeys[userId];
-                                                const nonce = '{{ $message->metadata['nonce'] ?? '' }}';
+                                                const nonce = @js($message->metadata['nonce'] ?? '');
 
                                                 if (privateKey && publicKey && encKeyForMe && nonce) {
                                                     this.decryptedBody = await window.EncryptionService.decryptMessage(
-                                                        '{{ $message->body }}',
+                                                        @js($message->body),
                                                         nonce,
                                                         encKeyForMe,
                                                         publicKey,
@@ -711,20 +711,20 @@ new class extends Component {
                                 {{-- Message Body --}}
                                 <div class="flex flex-col flex-1 min-w-0 text-left">
                                     <div x-data="{
-                                        decryptedBody: '{{ $message->body }}',
+                                        decryptedBody: @js($message->body),
                                         isEncrypted: {{ ($message->metadata['is_encrypted'] ?? false) ? 'true' : 'false' }},
                                         async init() {
                                             if (this.isEncrypted) {
-                                                const userId = '{{ auth()->id() }}';
+                                                const userId = @js(auth()->id());
                                                 const privateKey = sessionStorage.getItem('e2e_private_' + userId);
                                                 const publicKey = sessionStorage.getItem('e2e_public_' + userId);
-                                                const encKeys = @json($message->metadata['enc_keys'] ?? []);
+                                                const encKeys = @js($message->metadata['enc_keys'] ?? []);
                                                 const encKeyForMe = encKeys[userId];
-                                                const nonce = '{{ $message->metadata['nonce'] ?? '' }}';
+                                                const nonce = @js($message->metadata['nonce'] ?? '');
 
                                                 if (privateKey && publicKey && encKeyForMe && nonce) {
                                                     this.decryptedBody = await window.EncryptionService.decryptMessage(
-                                                        '{{ $message->body }}',
+                                                        @js($message->body),
                                                         nonce,
                                                         encKeyForMe,
                                                         publicKey,
@@ -804,8 +804,8 @@ new class extends Component {
                         const body = $wire.get('messageBody');
                         if (!body || !body.trim()) return;
 
-                        const keys = @json($selected->participant_public_keys ?? []);
-                        const userId = '{{ auth()->id() }}';
+                        const keys = @js($selected->participant_public_keys ?? []);
+                        const userId = @js(auth()->id());
                         const privateKey = sessionStorage.getItem('e2e_private_' + userId);
 
                         if (Object.keys(keys).length > 0 && privateKey) {
@@ -896,8 +896,8 @@ new class extends Component {
 
         <div class="relative w-full max-w-md bg-[#1e1e21] rounded-3xl overflow-hidden shadow-2xl border border-white/5 p-6 md:p-8"
             x-data="{
-                tag: '{{ auth()->user()->user_tag ?? 'Not Set' }}',
-                link: 'https://telefon.app/j/{{ auth()->user()->user_tag ?? 'default' }}',
+                tag: @js(auth()->user()->user_tag ?? 'Not Set'),
+                link: @js('https://telefon.app/j/' . (auth()->user()->user_tag ?? 'default')),
                 copied: false,
                 copy(text) {
                     navigator.clipboard.writeText(text);

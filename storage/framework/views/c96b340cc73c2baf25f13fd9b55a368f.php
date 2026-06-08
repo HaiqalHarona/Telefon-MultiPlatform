@@ -4,9 +4,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title><?php echo e($title ?? 'SanCo'); ?></title>
 
     <script>
+        window.userId = '<?php echo e(auth()->id()); ?>';
+        window.userPublicKey = '<?php echo e(auth()->user()->public_key ?? ''); ?>';
+
         // On page load or when changing themes, best to add inline in `head` to avoid FOUC
         const savedTheme = localStorage.getItem('theme') || 'dark';
         if (savedTheme === 'dark') {

@@ -10,7 +10,7 @@
         activeTab: 'profile',
     
         // --- PROFILE DATA ---
-        profileImagePreview: '<?php echo e(auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name)); ?>',
+        profileImagePreview: <?php echo \Illuminate\Support\Js::from(auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name))->toHtml() ?>,
         cropper: null,
         showCropModal: false,
     

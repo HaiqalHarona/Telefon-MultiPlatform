@@ -3,8 +3,13 @@ import sodium from 'libsodium-wrappers';
 
 class EncryptionService {
     async init() {
+        if(this.sodium) return; // Already initialized
         await sodium.ready;
         this.sodium = sodium;
+    }
+
+    async encryptMessage(body, recipientPublicKeys, senderPrivateKeyBase64) {
+        await this.init();
     }
 
     /**

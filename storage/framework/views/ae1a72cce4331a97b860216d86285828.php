@@ -24,7 +24,7 @@ use App\Events\LoadContactList;
         addFriendTab: 'id',
     
         init() {
-            let userId = '<?php echo e(auth()->id()); ?>';
+            let userId = <?php echo \Illuminate\Support\Js::from(auth()->id())->toHtml() ?>;
             window.Echo.private('user.' + userId).listen('IncomingRequest', (e) => {
     
                 $wire.$refresh();
@@ -325,7 +325,7 @@ use App\Events\LoadContactList;
             <div id="chat-messages-container" <?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::$currentLoop['key'] = 'conversation-'.e($selected->_id).''; ?>wire:key="conversation-<?php echo e($selected->_id); ?>"
                 class="flex-1 overflow-y-auto py-6 custom-scrollbar bg-transparent flex flex-col text-left"
                 x-data="{
-                    convoId: '<?php echo e($this->selectedConversationId); ?>',
+                    convoId: <?php echo \Illuminate\Support\Js::from($this->selectedConversationId)->toHtml() ?>,
                 
                     init() {
                         // Scroll down immediately when opening the chat
@@ -402,7 +402,35 @@ use App\Events\LoadContactList;
 
                                         </span>
                                     </div>
-                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words text-left w-full"><?php echo e($message->body); ?></div>
+                                    <div x-data="{
+                                        decryptedBody: <?php echo \Illuminate\Support\Js::from($message->body)->toHtml() ?>,
+                                        isEncrypted: <?php echo e(($message->metadata['is_encrypted'] ?? false) ? 'true' : 'false'); ?>,
+                                        async init() {
+                                            if (this.isEncrypted) {
+                                                const userId = <?php echo \Illuminate\Support\Js::from(auth()->id())->toHtml() ?>;
+                                                const privateKey = sessionStorage.getItem('e2e_private_' + userId);
+                                                const publicKey = sessionStorage.getItem('e2e_public_' + userId);
+                                                const encKeys = <?php echo \Illuminate\Support\Js::from($message->metadata['enc_keys'] ?? [])->toHtml() ?>;
+                                                const encKeyForMe = encKeys[userId];
+                                                const nonce = <?php echo \Illuminate\Support\Js::from($message->metadata['nonce'] ?? '')->toHtml() ?>;
+
+                                                if (privateKey && publicKey && encKeyForMe && nonce) {
+                                                    this.decryptedBody = await window.EncryptionService.decryptMessage(
+                                                        <?php echo \Illuminate\Support\Js::from($message->body)->toHtml() ?>,
+                                                        nonce,
+                                                        encKeyForMe,
+                                                        publicKey,
+                                                        privateKey
+                                                    );
+                                                } else {
+                                                    this.decryptedBody = '[Encrypted Message - Key Missing]';
+                                                }
+                                            }
+                                        }
+                                    }" class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words text-left w-full" x-text="decryptedBody">
+                                        <?php echo e($message->body); ?>
+
+                                    </div>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -414,7 +442,35 @@ use App\Events\LoadContactList;
 
                                 
                                 <div class="flex flex-col flex-1 min-w-0 text-left">
-                                    <div class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words text-left w-full"><?php echo e($message->body); ?></div>
+                                    <div x-data="{
+                                        decryptedBody: <?php echo \Illuminate\Support\Js::from($message->body)->toHtml() ?>,
+                                        isEncrypted: <?php echo e(($message->metadata['is_encrypted'] ?? false) ? 'true' : 'false'); ?>,
+                                        async init() {
+                                            if (this.isEncrypted) {
+                                                const userId = <?php echo \Illuminate\Support\Js::from(auth()->id())->toHtml() ?>;
+                                                const privateKey = sessionStorage.getItem('e2e_private_' + userId);
+                                                const publicKey = sessionStorage.getItem('e2e_public_' + userId);
+                                                const encKeys = <?php echo \Illuminate\Support\Js::from($message->metadata['enc_keys'] ?? [])->toHtml() ?>;
+                                                const encKeyForMe = encKeys[userId];
+                                                const nonce = <?php echo \Illuminate\Support\Js::from($message->metadata['nonce'] ?? '')->toHtml() ?>;
+
+                                                if (privateKey && publicKey && encKeyForMe && nonce) {
+                                                    this.decryptedBody = await window.EncryptionService.decryptMessage(
+                                                        <?php echo \Illuminate\Support\Js::from($message->body)->toHtml() ?>,
+                                                        nonce,
+                                                        encKeyForMe,
+                                                        publicKey,
+                                                        privateKey
+                                                    );
+                                                } else {
+                                                    this.decryptedBody = '[Encrypted Message - Key Missing]';
+                                                }
+                                            }
+                                        }
+                                    }" class="text-[14.5px] text-[#dbdee1] leading-[1.5rem] whitespace-pre-wrap break-words text-left w-full" x-text="decryptedBody">
+                                        <?php echo e($message->body); ?>
+
+                                    </div>
                                 </div>
 
                                 
@@ -457,7 +513,7 @@ use App\Events\LoadContactList;
                             Messages</span>
                     </div>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                <form wire:submit="messageUser" class="relative flex items-center gap-3" x-data="{
+                <form @submit.prevent="encryptAndSend" class="relative flex items-center gap-3" x-data="{
                     maxSize: 10 * 1024 * 1024, // 10MB
                     fileName: '',
                     handleFile(e) {
@@ -478,11 +534,29 @@ use App\Events\LoadContactList;
                         document.getElementById('attachment-input').value = '';
                         this.fileName = '';
                     },
-                    clearOnSubmit() {
-                        this.removeFile();
+                    async encryptAndSend() {
+                        const body = $wire.get('messageBody');
+                        if (!body || !body.trim()) return;
+
+                        const keys = <?php echo \Illuminate\Support\Js::from($selected->participant_public_keys ?? [])->toHtml() ?>;
+                        const userId = <?php echo \Illuminate\Support\Js::from(auth()->id())->toHtml() ?>;
+                        const privateKey = sessionStorage.getItem('e2e_private_' + userId);
+
+                        if (Object.keys(keys).length > 0 && privateKey) {
+                            try {
+                                const result = await window.EncryptionService.encryptMessage(body, keys, privateKey);
+                                $wire.messageUser(result.encBody, result.nonce, result.keys);
+                                this.removeFile();
+                            } catch (e) {
+                                console.error('Encryption failed:', e);
+                                $wire.messageUser(); // Fallback
+                            }
+                        } else {
+                            $wire.messageUser();
+                            this.removeFile();
+                        }
                     }
-                }"
-                    @submit="clearOnSubmit">
+                }">
 
                     <div>
                         <input type="file" id="attachment-input" class="hidden" @change="handleFile">
@@ -556,8 +630,8 @@ use App\Events\LoadContactList;
 
         <div class="relative w-full max-w-md bg-[#1e1e21] rounded-3xl overflow-hidden shadow-2xl border border-white/5 p-6 md:p-8"
             x-data="{
-                tag: '<?php echo e(auth()->user()->user_tag ?? 'Not Set'); ?>',
-                link: 'https://telefon.app/j/<?php echo e(auth()->user()->user_tag ?? 'default'); ?>',
+                tag: <?php echo \Illuminate\Support\Js::from(auth()->user()->user_tag ?? 'Not Set')->toHtml() ?>,
+                link: <?php echo \Illuminate\Support\Js::from('https://telefon.app/j/' . (auth()->user()->user_tag ?? 'default'))->toHtml() ?>,
                 copied: false,
                 copy(text) {
                     navigator.clipboard.writeText(text);

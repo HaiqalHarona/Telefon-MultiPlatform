@@ -10,7 +10,7 @@
         activeTab: 'profile',
     
         // --- PROFILE DATA ---
-        profileImagePreview: '{{ auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name) }}',
+        profileImagePreview: @js(auth()->user()->avatar ?? 'https://ui-avatars.com/api/?background=ec4899&color=fff&name=' . urlencode(auth()->user()->name)),
         cropper: null,
         showCropModal: false,
     
